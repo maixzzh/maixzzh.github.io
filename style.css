@@ -1,0 +1,67 @@
+body {
+    background-color: rgba(0, 0, 0);
+    background-image: url('img2.png');
+    opacity: 0.85;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    background-size: 100% 100%;
+    background-attachment: fixed;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+    color: azure
+}
+
+content {
+    
+    opacity: 0;
+}
+
+blockquote {
+    color: gray;
+    margin-left: 16px;
+    margin-right: 16px;
+    padding: 0 16px;
+    border-left: 3px grey solid;
+}
+.navbar {
+    background-color: rgb(228, 228, 228);
+    padding: 10px;
+    position: fixed;
+    width: 100%
+}
+
+.navbar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.navbar ul li {
+    display: inline;
+    margin-right: 20px;
+}
+
+.navbar ul li a {
+    /* color: blue;
+    font-family: 'StKaiti','SimHei';*/
+    max-width: 100%;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+.navbar img {
+    max-width: 60%;
+    min-width: none;
+}
