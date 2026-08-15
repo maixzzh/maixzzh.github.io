@@ -4,6 +4,12 @@ This repository contains a personal blog built on the Jekyll Minima theme with s
 
 [Preview: https://mxkfemkkk.github.io/](https://mxkfemkkk.github.io/)
 
+## Preview
+
+![](/assets/PixPin_2026-08-15_10-28-13.png)
+
+![](/assets/PixPin_2026-08-15_10-29-10.png)
+
 ## Highlights / Features
 
 - Manual dark/light mode toggle — users can switch between light and dark themes manually. The site provides a UI control to toggle the theme and preserve the preference across visits.
