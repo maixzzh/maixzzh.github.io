@@ -1,0 +1,234 @@
+/* ==========================================================
+   文章页 · Fluent 主题
+   参照 fluent.css（Typora Fluent 主题）移植，仅作用于文章页
+   ========================================================== */
+
+/* ---------- 文章卡片 ---------- */
+.post {
+  background: var(--card);
+  border: 1px solid var(--post-border);
+  border-radius: 4px;
+  padding: 40px 48px 48px;
+  margin: 24px 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* ---------- 文章头部 ---------- */
+.post h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.04rem;
+  color: var(--heading);
+  margin: 0 0 10px;
+}
+
+.post-tags {
+  color: var(--link);
+  font-size: 0.875rem;
+  margin-bottom: 6px;
+}
+
+.post-d {
+  color: var(--post-meta);
+  font-size: 0.9375rem;
+  margin-bottom: 8px;
+}
+
+.post-date {
+  display: inline-block;
+  width: 100%;
+  color: var(--post-date-color);
+  font-size: 0.8125rem;
+  margin: 4px 0 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--post-border);
+}
+
+/* ---------- 正文排版 ---------- */
+.post-content {
+  margin-top: 8px;
+  color: var(--body-text);
+}
+
+.post-content p {
+  margin-top: 0.5em;
+  margin-bottom: 2.5em;
+  margin: 0.5em 0;
+  color: var(--body-text);
+}
+
+.post-content h2,
+.post-content h3,
+.post-content h4,
+.post-content h5,
+.post-content h6 {
+  font-weight: 700;
+  line-height: 1.4;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  color: var(--heading);
+}
+
+.post-content h2,
+.post-content h3,
+.post-content h4 {
+  letter-spacing: -0.04rem;
+}
+
+.post-content h2 {
+  font-size: 1.25em;
+  line-height: 1.225;
+}
+
+.post-content h3 {
+  font-size: 1.0em;
+  line-height: 1.43;
+}
+
+.post-content h4 {
+  font-size: 0.875em;
+}
+
+.post-content h5 {
+  font-size: 0.74em;
+}
+
+.post-content h6 {
+  font-size: 0.625em;
+  color: var(--post-meta);
+}
+
+/* ---------- 链接 ---------- */
+.post-content a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.post-content a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- 引用 ---------- */
+.post-content blockquote {
+  color: var(--post-meta);              /* GitHub 默认引用文字颜色（灰色） */
+  font-style: italic;          /* 斜体（GitHub 偶尔在引用中强调，这里按你的需求加上） */
+  border-left: 4px solid var(--table-border); /* 只有左边框，颜色是 GitHub 浅灰色 */
+  border-top: none;            /* 去掉上边框 */
+  border-right: none;          /* 去掉右边框 */
+  border-bottom: none;         /* 去掉下边框 */
+  background-color: transparent; /* 去掉背景色，变成完全透明 */
+  padding: 0 0 0 1em;          /* 只保留左侧内边距，让文字和边框有呼吸感 */
+  margin: 0.8em 0;             /* 上下边距保持不变，左右边距归零（或按你的需求调整） */
+  border-radius: 0;            /* 去掉圆角（GitHub 引用没有圆角） */
+}
+
+/* ---------- 代码 ---------- */
+.post-content code {
+  background-color: var(--code-bg);
+  border: 1px solid var(--post-border);
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 0.9em;
+  color: var(--body-text);
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono",
+    Menlo, monospace;
+}
+
+.post-content pre {
+  background-color: var(--code-bg);
+  border: 1px solid var(--post-border);
+  border-radius: 4px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  margin: 0.8em 0;
+  line-height: 1.45;
+}
+
+.post-content pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 0.875rem;
+}
+
+/* ---------- 列表 ---------- */
+.post-content ul,
+.post-content ol {
+  padding-left: 30px;
+  margin: 0.8em 0;
+}
+
+.post-content li {
+  margin: 0.25em 0;
+}
+
+.post-content li > ul,
+.post-content li > ol {
+  margin: 0;
+}
+
+/* ---------- 表格 ---------- */
+.post-content table {
+  border-collapse: collapse;
+  margin: 0.8em 0;
+  font-size: 0.9375rem;
+}
+
+.post-content th,
+.post-content td {
+  border: 1px solid var(--table-border);
+  padding: 6px 13px;
+}
+
+.post-content thead,
+.post-content tr:nth-child(2n) {
+  background-color: var(--table-stripe);
+}
+
+.post-content th {
+  font-weight: 600;
+}
+
+/* ---------- 分隔线 / 高亮 / 图片 ---------- */
+.post-content hr {
+  height: 2px;
+  background-color: var(--hr);
+  border: 0;
+  margin: 16px 0;
+}
+
+.post-content mark {
+  background-color: var(--mark-bg);
+  color: var(--mark-text);
+  border-radius: 4px;
+  padding: 0 4px 2px;
+}
+
+.post-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+/* ---------- Gitalk 评论区 ---------- */
+.post-comments {
+  margin: 24px 0;
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 768px) {
+  .post {
+    padding: 24px 20px;
+    margin: 12px 0;
+  }
+
+  .post h1 {
+    font-size: 1.75rem;
+  }
+}
+
+/* ---------- MathJax：公式颜色跟随正文（SVG 输出默认 currentColor） ---------- */
+.mjx-container {
+  color: var(--body-text);
+}

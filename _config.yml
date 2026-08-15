@@ -1,0 +1,21 @@
+title: 您的用户名                    # 导航栏左侧用户名，首页姓名
+email: your-email@example.com       # 您的联系邮箱
+description: 您的个人博客简介         # 站点描述
+signature: 您的个性签名              # 首页个性签名（可自定义）
+lang: zh-CN                         # 语言
+url: "https://your-username.github.io"   # 站点域名（务必替换为您的 GitHub Pages 地址）
+baseurl: ""                         # 用户站点必须为空字符串
+encoding: utf-8
+theme: minima
+markdown: kramdown
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+permalink: /:year/:month/:day/:title/
+date_format: "%Y-%m-%d"
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post

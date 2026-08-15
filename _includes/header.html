@@ -1,0 +1,34 @@
+{% assign current = page.url %}
+<header class="site-header glass">
+  <nav class="site-nav">
+    <a class="brand {% if current == "/" %}active{% endif %}" href="{{ "/" | relative_url }}">{{ site.title }}</a>
+    <a href="{{ "/posts/" | relative_url }}" class="{% if current contains "/posts/" or page.layout == "post" %}active{% endif %}">文章</a>
+    <a href="{{ "/tags/" | relative_url }}" class="{% if current == "/tags/" %}active{% endif %}">标签</a>
+    <a class="nav-about {% if current == "/about/" %}active{% endif %}" href="{{ "/about/" | relative_url }}">关于</a>
+    <div class="theme-menu" id="theme-menu">
+      <button type="button" class="theme-menu-trigger" id="theme-menu-trigger"
+              aria-haspopup="menu" aria-expanded="false">主题</button>
+      <div class="theme-menu-panel" role="menu" aria-labelledby="theme-menu-trigger">
+        <div class="theme-menu-item" role="menuitem" tabindex="0">
+          颜色模式
+          <span class="theme-menu-caret" aria-hidden="true">▸</span>
+          <div class="theme-menu-sub" role="group" aria-label="颜色模式选项">
+            <button type="button" data-theme="light" aria-pressed="false">浅色</button>
+            <button type="button" data-theme="dark" aria-pressed="false">深色</button>
+            <button type="button" data-theme="auto" aria-pressed="false">自动</button>
+          </div>
+        </div>
+        <div class="theme-menu-item" role="menuitem" tabindex="0">
+          透明模式
+          <span class="theme-menu-caret" aria-hidden="true">▸</span>
+          <div class="theme-menu-sub" role="group" aria-label="透明模式选项">
+            <button type="button" data-style="liquid" aria-pressed="false">液态</button>
+            <button type="button" data-style="frost" aria-pressed="false">模糊</button>
+            <button type="button" data-style="solid" aria-pressed="false">纯色</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <a class="nav-theme-link {% if current == "/theme/" %}active{% endif %}" href="{{ "/theme/" | relative_url }}">设置</a>
+  </nav>
+</header>

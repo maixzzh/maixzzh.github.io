@@ -1,0 +1,466 @@
+/* glass-refraction 站点定制 —— 本文件在 glass.css 之后加载，同级规则必胜
+   库默认是深海军蓝玻璃，此处整体换为浅色主题 */
+
+:root {
+  --gr-blur: 9px;               /* 导航玻璃模糊（默认 26px 过重） */
+  --gr-blur-card: 9px;          /* 卡片玻璃模糊（默认 20px） */
+  --gr-saturation: 1.35;
+  --gr-saturation-card: 1.3;
+  --gr-shimmer-duration: 8s;     /* 导航扫光放缓（默认 7s） */
+  --gr-specular-duration: 8s;    /* 呼吸高光放缓（默认 5s） */
+}
+
+/* 浅色底色变量（.glass 的渐变背景引用这两个变量；
+   .glass-card 的背景在库内是硬编码的，需在下方按类直接覆盖） */
+.glass, .glass-card, .glass-pill {
+  --gr-bg-start: var(--glass-tint-start);
+  --gr-bg-end: var(--glass-tint-end);
+}
+
+/* —— 圆角与站点现有 8px 统一（色散边缘基于圆角定位） —— */
+.glass-card { --gr-radius-card: 8px; }
+.glass      { --gr-radius: 8px; }
+
+/* —— 覆盖库硬编码的深海军蓝卡片背景（rgba(15,18,30,0.52)）为浅色 —— */
+.glass-card {
+  background: var(--glass-card-bg);
+}
+
+/* —— 吸顶导航：库的 .glass 把 position 覆盖成 relative，这里补回 sticky —— */
+.site-header.glass {
+  position: sticky;
+  top: 0;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid var(--border);
+}
+
+/* —— 内边距与原有卡片保持一致（若库未来加 padding 则覆盖之） —— */
+.profile-card.glass-card { padding: 24px; }
+.feed-item.glass-card    { padding: 18px 20px; }
+.side-card.glass-card    { padding: 20px; }
+
+/* —— feed 卡片悬停上浮：库的 .glass-card:hover (0,1,0) 被 main.css
+   的 .feed-item:hover (0,2,0) 压掉，补同级规则恢复玻璃悬停效果 —— */
+.feed-item.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 0.5px rgba(255, 255, 255, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 8px 32px -8px rgba(0, 0, 0, 0.45);
+}
+
+/* —— 老浏览器无 backdrop-filter：底色加浓保证可读 —— */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass, .glass-pill {
+    --gr-bg-start: var(--glass-fallback-bg);
+    --gr-bg-end: var(--glass-fallback-bg);
+  }
+  .glass-card {
+    background: var(--glass-fallback-bg);
+  }
+}
+
+/* —— 移动端：降低模糊控制开销 —— */
+@media (max-width: 768px) {
+  .glass      { --gr-blur: 10px; }
+  .glass-card { --gr-blur-card: 8px; }
+  .profile-card.glass-card { padding: 18px; }   /* 与 main.css 768px 断点一致 */
+}
+
+/* —— 无障碍：尊重系统「减少动态效果」 —— */
+@media (prefers-reduced-motion: reduce) {
+  .glass, .glass-card, .glass-pill,
+  .glass::before, .glass::after,
+  .glass-card::before, .glass-card::after,
+  .glass-pill::before, .glass-pill::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ============================================================
+   视觉风格切换：液态玻璃 / 高斯模糊高透明 / 纯色
+   通过 <html data-glass="..."> 生效；liquid 为默认，无需覆盖
+   ============================================================ */
+
+/* 导航右侧两个切换控件的容器：作为一个整体右对齐/换行 */
+.nav-switches {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- 切换控件（导航栏右侧；自身不带 glass 类，不受风格影响） ---------- */
+.glass-switch,
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--control-bg);            /* 玻璃/纯色头部下都可读 */
+}
+
+.glass-switch button,
+.theme-switch button {
+  font: inherit;
+  font-size: 0.8125rem;                    /* 与元信息字号一致 */
+  line-height: 1;
+  color: var(--text-2);
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.glass-switch button:hover,
+.theme-switch button:hover {
+  color: var(--blue);
+  background: rgba(0, 132, 255, 0.08);
+}
+
+.glass-switch button.active,
+.glass-switch button[aria-pressed="true"],
+.theme-switch button.active,
+.theme-switch button[aria-pressed="true"] {
+  background: var(--blue);
+  color: #fff;
+}
+
+.glass-switch button:focus-visible,
+.theme-switch button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+/* ---------- 风格二：高斯模糊高透明（frost） ---------- */
+html[data-glass="frost"] .glass {
+  background: var(--frost-nav-bg);         /* 覆盖库的两层渐变（含 background-size 复位） */
+  -webkit-backdrop-filter: blur(10px);      /* 纯模糊，去掉 saturate/brightness */
+  backdrop-filter: blur(10px);
+  box-shadow: none;                         /* 去描边环 / 内高光 / 深度投影 */
+  animation: none;                          /* 去扫光 */
+}
+
+/* 去呼吸高光、色散边缘、顶部亮线 */
+html[data-glass="frost"] .glass::before,
+html[data-glass="frost"] .glass::after,
+html[data-glass="frost"] .glass-card::before,
+html[data-glass="frost"] .glass-card::after {
+  content: none;
+}
+
+html[data-glass="frost"] .glass-card {
+  background: var(--frost-card-bg);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: none;
+  transition: none;                         /* 无动画无过渡 */
+}
+
+/* 压过库的 .glass-card:hover 与本文件的 .feed-item.glass-card:hover（悬停不上浮） */
+html[data-glass="frost"] .glass-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* 老浏览器无 backdrop-filter：底色加浓保证可读（与 liquid 的 0.92 回退一致） */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html[data-glass="frost"] .glass       { background: var(--glass-fallback-bg); }
+  html[data-glass="frost"] .glass-card  { background: var(--glass-fallback-bg); }
+}
+
+/* ---------- 风格三：纯色（solid，还原最初白色卡片） ---------- */
+html[data-glass="solid"] .site-header.glass {
+  background: var(--card);                /* 还原白色吸顶头 */
+  border-radius: 0;                       /* 原头部是通栏直角，无圆角 */
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  animation: none;
+}
+
+html[data-glass="solid"] .glass::before,
+html[data-glass="solid"] .glass::after,
+html[data-glass="solid"] .glass-card::before,
+html[data-glass="solid"] .glass-card::after {
+  content: none;
+}
+
+html[data-glass="solid"] .glass-card {
+  background: var(--card);                /* 还原 .card 白底 */
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transition: box-shadow 0.2s;            /* 还原 main.css 原始悬停过渡 */
+}
+
+html[data-glass="solid"] .glass-card:hover {
+  transform: none;                        /* 压过库上浮与玻璃阴影 */
+  box-shadow: none;
+}
+
+/* feed 卡片保留原始轻微悬停阴影（同 main.css .feed-item:hover） */
+html[data-glass="solid"] .feed-item.glass-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* ---------- 移动端（≤768px）：控件换行靠右；frost 降低模糊开销 ---------- */
+@media (max-width: 768px) {
+  .nav-switches { display: none; }        /* 移动端：控件移入 /theme/ 页面，导航栏节省空间 */
+  .nav-theme-link { display: inline; margin-left: auto; }   /* 只留入口链接，靠右 */
+  html[data-glass="frost"] .glass {
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+  html[data-glass="frost"] .glass-card {
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+}
+
+/* ---------- 文章页/标签页正文卡片：为阅读体验强制 frost 或 solid ----------
+   .post/.page 不使用液态玻璃（长文阅读时扫光/色散干扰）；
+   liquid / frost 模式均显示为高斯模糊高透明，solid 模式还原实心白。
+   post.css 在后加载且同为 (0,1,0)，故此处必须用 html[data-glass]
+   作用域选择器（0,2,1）才能压过它 */
+html[data-glass="liquid"] .post,
+html[data-glass="frost"] .post,
+html[data-glass="liquid"] .page,
+html[data-glass="frost"] .page {
+  background: var(--post-frost-bg);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: none;
+}
+
+html[data-glass="solid"] .post,
+html[data-glass="solid"] .page {
+  background: var(--card);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* ---------- 导航"主题样式"入口（桌面隐藏：桌面保持控件直显） ---------- */
+.nav-theme-link {
+  display: none;
+}
+
+/* ---------- /theme/ 设置页：说明文字与控件布局 ---------- */
+.theme-page-desc {
+  color: var(--text-2);
+  font-size: 0.875rem;
+  margin-bottom: 20px;
+}
+
+.theme-page-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.theme-page-controls .glass-switch,
+.theme-page-controls .theme-switch {
+  align-self: flex-start;
+  padding: 4px;
+}
+
+.theme-page-controls .glass-switch button,
+.theme-page-controls .theme-switch button {
+  padding: 8px 16px;
+  font-size: 0.9375rem;
+}
+
+/* ============================================================
+   导航「主题」两级下拉菜单（macOS 风格，仅桌面端）
+   桌面端替换原 .nav-switches 分段控件；移动端保持 设置 链接入口
+   全部用 var() 令牌：深色模式与三种玻璃风格下均可读
+   ============================================================ */
+
+/* 桌面端保险：.nav-switches 已从导航移除（改由菜单承担） */
+@media (min-width: 769px) {
+  .nav-switches { display: none; }
+}
+
+/* ---------- 触发器：菜单栏风格按钮 ---------- */
+.theme-menu {
+  position: relative;            /* 面板定位锚点 */
+}
+
+.theme-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  font-size: 0.9375rem;          /* 与 .site-nav a 字号一致 */
+  line-height: 1;
+  color: var(--text);
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.theme-menu-trigger:hover,
+.theme-menu-trigger[aria-expanded="true"] {
+  color: var(--blue);
+  background: var(--hover-bg);
+}
+
+.theme-menu-trigger:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* ---------- 面板：实底卡片，浮于玻璃头部之上 ---------- */
+.theme-menu-panel {
+  position: absolute;
+  top: calc(100% + 6px);         /* 紧贴触发器下缘（macOS 感） */
+  right: 0;                      /* 面板右缘与触发器右缘对齐 */
+  z-index: 10;                   /* 需 > .glass::before(3) / ::after(2)，盖过扫光/色散 */
+  min-width: 12rem;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);       /* 实底，玻璃/纯色头部下都可读 */
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s;
+}
+
+.theme-menu.open .theme-menu-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+/* ---------- 一级项：颜色模式 / 透明模式 ---------- */
+.theme-menu-item {
+  position: relative;            /* 二级子菜单定位锚点 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--text);
+  cursor: default;
+}
+
+.theme-menu-item:hover,
+.theme-menu-item:focus-visible {
+  background: var(--hover-bg);
+  color: var(--blue);
+}
+
+.theme-menu-caret {
+  font-size: 0.75rem;
+  line-height: 1;
+  color: var(--text-2);
+}
+
+.theme-menu-item:hover .theme-menu-caret,
+.theme-menu-item:focus-visible .theme-menu-caret {
+  color: var(--blue);
+}
+
+/* ---------- 二级子菜单：默认向右侧展开（macOS 方向） ---------- */
+.theme-menu-sub {
+  position: absolute;
+  top: 0;
+  left: 100%;                    /* 与一级项右缘零缝隙贴合，悬停不中断 */
+  min-width: 9.5rem;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease, visibility 0.12s;
+}
+
+.theme-menu-item:hover > .theme-menu-sub,
+.theme-menu-item:focus-within > .theme-menu-sub {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 窄桌面（≤1360px）：子菜单改向左展开，避免超出视口右缘
+   （数学：面板右缘=(视口+1032)/2，子菜单 152px 需视口≥1342px 才右展） */
+@media (max-width: 1360px) {
+  .theme-menu-sub {
+    left: auto;
+    right: 100%;                 /* 与一级项左缘零缝隙贴合 */
+  }
+}
+
+/* ---------- 选项按钮：选中 = 对勾 + 主题蓝（macOS 风格） ---------- */
+.theme-menu-sub button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  color: var(--text);
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;           /* 中文可任意断行，必须禁止换行 */
+}
+
+.theme-menu-sub button:hover {
+  background: var(--hover-bg);
+}
+
+.theme-menu-sub button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+/* 对勾占位：固定宽度保持所有标签对齐 */
+.theme-menu-sub button::before {
+  content: "";
+  width: 1.25em;
+  flex: none;
+  visibility: hidden;
+}
+
+.theme-menu-sub button.active::before {
+  content: "✓";
+  visibility: visible;
+  color: var(--blue);
+}
+
+.theme-menu-sub button.active {
+  color: var(--blue);
+  font-weight: 600;
+}
+
+/* ---------- 移动端：菜单隐藏（原 设置 链接 + /theme/ 页入口不变） ---------- */
+@media (max-width: 768px) {
+  .theme-menu { display: none; }
+}
+
+/* ---------- 无障碍：尊重系统「减少动态效果」 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .theme-menu-panel,
+  .theme-menu-sub {
+    transition: none;
+  }
+}

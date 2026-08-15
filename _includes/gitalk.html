@@ -1,0 +1,17 @@
+{% if site.gitalk and site.gitalk.clientID %}
+<div id="gitalk-container" class="post-comments"></div>
+<link rel="stylesheet" href="https://unpkg.com//dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+<script>
+  var gitalk = new Gitalk({
+    clientID: '{{ site.gitalk.clientID }}',
+    clientSecret: '{{ site.gitalk.clientSecret }}',
+    repo: '{{ site.gitalk.repo }}',
+    owner: '{{ site.gitalk.owner }}',
+    admin: ['{{ site.gitalk.admin }}'],
+    id: '{{ page.path }}',   // 文章文件路径，每篇唯一且长度小于50
+    distractionFreeMode: false
+  });
+  gitalk.render('gitalk-container');
+</script>
+{% endif %}

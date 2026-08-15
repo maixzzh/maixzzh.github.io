@@ -1,0 +1,40 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% seo %}
+{% include head-custom.html %}
+<!-- 视觉风格 + 颜色主题预置：在样式表前写入 data-glass / data-theme，避免刷新闪动 -->
+<script>
+  (function () {
+    /* 视觉风格 */
+    var s = 'liquid';
+    try {
+      var stored = localStorage.getItem('glass-style');
+      if (stored === 'liquid' || stored === 'frost' || stored === 'solid') {
+        s = stored;
+      }
+    } catch (e) { /* localStorage 不可用（隐私模式等）时保持默认 */ }
+    document.documentElement.dataset.glass = s;
+
+    /* 颜色主题：显式选择优先，'auto' 解析系统偏好；
+       CSS 不含 prefers-color-scheme 媒体查询，一切由 JS 定案 */
+    var t = 'auto';
+    try {
+      var storedTheme = localStorage.getItem('glass-theme');
+      if (storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'auto') {
+        t = storedTheme;
+      }
+    } catch (e) { /* 同上 */ }
+    if (t === 'auto') {
+      t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        ? 'dark' : 'light';
+    }
+    document.documentElement.dataset.theme = t;
+  })();
+</script>
+<link rel="stylesheet" href="{{ "/assets/css/main.css" | relative_url }}">
+<link rel="stylesheet" href="{{ "/assets/css/glass.css" | relative_url }}">
+<link rel="stylesheet" href="{{ "/assets/css/glass-overrides.css" | relative_url }}">
+<link rel="stylesheet" href="{{ "/assets/css/post.css" | relative_url }}">
+<script src="{{ "/assets/js/glass-style.js" | relative_url }}" defer></script>
+<script src="{{ "/assets/js/glass-theme.js" | relative_url }}" defer></script>
+<script src="{{ "/assets/js/theme-menu.js" | relative_url }}" defer></script>

@@ -1,0 +1,39 @@
+---
+layout: default
+---
+<div class="home">
+  <div class="home-main">
+    <!-- 个人信息卡片 -->
+    <section class="card profile-card glass-card">
+      <img class="avatar" src="{{ "/assets/images/avatar.svg" | relative_url }}" alt="{{ site.title }}">
+      <div class="profile-info">
+        <h1 class="name">{{ site.title }}</h1>
+        <p class="signature">{{ site.signature }}</p>
+      </div>
+    </section>
+
+    <!-- 最新文章 -->
+    <div class="home-feed">
+      {% for post in site.posts limit: 10 %}
+      <article class="card feed-item glass-card">
+        <h2 class="feed-title"><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
+        {% if post.d %}<p class="feed-desc">{{ post.d }}</p>{% endif %}
+        <div class="feed-meta">
+          {% if post.tags %}<span class="feed-tags">{{ post.tags | join: " · " }}</span>{% endif %}
+          <time class="feed-date">{{ post.date | date: site.date_format }}</time>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    {{ content }}
+  </div>
+
+  <!-- 侧边栏 -->
+  <aside class="home-side">
+    <section class="card side-card glass-card">
+      <h2 class="card-title">关注我</h2>
+      {% include social.html %}
+    </section>
+  </aside>
+</div>

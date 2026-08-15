@@ -1,0 +1,26 @@
+---
+layout: default
+---
+{% assign start = page.offset | default: 0 %}
+<h1>文章</h1>
+<ul class="post-list">
+  {% for post in site.posts | slice: start, 10 %}
+  <li>
+    <h2><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
+    {% if post.d %}<p class="post-d">{{ post.d }}</p>{% endif %}
+    <p class="excerpt">{{ post.excerpt | strip_html | truncate: 100 }}</p>
+  </li>
+  {% endfor %}
+</ul>
+<nav class="pagination">
+  {% if start > 0 %}
+    {% assign prev_num = start | divided_by: 10 %}
+    <a href="{% if prev_num == 1 %}{{ "/posts/" | relative_url }}{% else %}{{ "/posts/page" | append: prev_num | append: "/" | relative_url }}{% endif %}">上一页</a>
+  {% endif %}
+  <span>第 {{ start | divided_by: 10 | plus: 1 }} 页</span>
+  {% assign remaining = site.posts.size | minus: start | minus: 10 %}
+  {% if remaining > 0 %}
+    {% assign next_num = start | divided_by: 10 | plus: 2 %}
+    <a href="{{ "/posts/page" | append: next_num | append: "/" | relative_url }}">下一页</a>
+  {% endif %}
+</nav>
