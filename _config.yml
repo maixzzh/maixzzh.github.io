@@ -1,9 +1,9 @@
-title: 您的用户名                    # 导航栏左侧用户名，首页姓名
-email: your-email@example.com       # 您的联系邮箱
-description: 您的个人博客简介         # 站点描述
-signature: 您的个性签名              # 首页个性签名（可自定义）
+title: 张麦轩                    # 导航栏左侧用户名，首页姓名
+email: maixuanzhang7@gmail.com       # 您的联系邮箱
+description: 习惯把世界看成点和边：相遇是边，时间是边权，回忆是强连通分量；愿我们之间的图没有负环，只有一条通往彼此的最短路。         # 站点描述
+signature: 把人生拓扑排序，找到通往 AC 的最短路              # 首页个性签名（可自定义）
 lang: zh-CN                         # 语言
-url: "https://your-username.github.io"   # 站点域名（务必替换为您的 GitHub Pages 地址）
+url: "https://maixzzh.github.io"   # 站点域名（务必替换为您的 GitHub Pages 地址）
 baseurl: ""                         # 用户站点必须为空字符串
 encoding: utf-8
 theme: minima
