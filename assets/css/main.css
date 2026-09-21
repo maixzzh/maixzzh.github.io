@@ -383,10 +383,10 @@ h1, h2, h3 {
   margin: 20px 0;
 }
 
+/* 卡片外壳交给 .card glass-card（同 .feed-item 的写法）。
+   不要在这里写 background / border：本选择器特异性 (0,1,1) 高于
+   .glass-card 的 (0,1,0)，会把玻璃背景压掉，导致玻璃效果失效 */
 .post-list li {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
   padding: 18px 20px;
 }
 

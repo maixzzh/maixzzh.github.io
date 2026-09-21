@@ -13,8 +13,35 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
+/* ---------- 文章标题卡片 ----------
+   标题区独立成卡（.glass-card），因此接入玻璃风格系统：
+   liquid = 扫光玻璃，frost = 纯模糊，solid = 白底。
+   正文 .post 不在此列，仍按站点策略强制高斯模糊。
+   几何上必须与 .post 对齐——同圆角、同左右内边距、同宽度，
+   否则两张卡片上下相接时圆角和文字缩进会错位 */
+html[data-glass] .post-header {
+  /* 圆角对齐 .post 的 4px（而不是 .card / .glass-card 的 8px）。
+     必须带 html[data-glass]：solid 模式下的
+     `html[data-glass="solid"] .glass-card { border-radius: 8px }` 特异性为
+     (0,2,1)，靠 post.css 后加载取等特异性才能压过 */
+  border-radius: 4px;
+}
+
+.post-header {
+  padding: 32px 48px 28px;       /* 左右与 .post 的 48px 对齐 */
+  margin: 24px 0 0;              /* 下边距为 0，与 .post 的 margin-top 折叠成 24px 间距 */
+}
+
+/* 日期原本靠下边框与正文分隔；现在卡片边界本身就是分隔，去掉这条线 */
+.post-header .post-date {
+  border-bottom: 0;
+  padding-bottom: 0;
+  margin: 4px 0 0;               /* 收掉原本给正文预留的下边距 */
+}
+
 /* ---------- 文章头部 ---------- */
-.post h1 {
+.post h1,
+.post-header h1 {
   font-size: 1.75rem;
   font-weight: 700;
   line-height: 1.2;
@@ -223,7 +250,14 @@
     margin: 12px 0;
   }
 
-  .post h1 {
+  /* 与 .post 同步收紧，保持两张卡片左右内边距一致 */
+  .post-header {
+    padding: 24px 20px 20px;
+    margin: 12px 0 0;
+  }
+
+  .post h1,
+  .post-header h1 {
     font-size: 1.75rem;
   }
 }

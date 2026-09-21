@@ -1,10 +1,23 @@
 {% assign current = page.url %}
-<header class="site-header glass">
+<header class="site-header glass" id="site-header">
   <nav class="site-nav">
-    <a class="brand {% if current == "/" %}active{% endif %}" href="{{ "/" | relative_url }}">{{ site.title }}</a>
-    <a href="{{ "/posts/" | relative_url }}" class="{% if current contains "/posts/" or page.layout == "post" %}active{% endif %}">文章</a>
-    <a href="{{ "/tags/" | relative_url }}" class="{% if current == "/tags/" %}active{% endif %}">标签</a>
-    <a class="nav-about {% if current == "/about/" %}active{% endif %}" href="{{ "/about/" | relative_url }}">关于</a>
+    <!-- 左：品牌。收缩时文字折叠，只留缩小的头像 -->
+    <a class="brand {% if current == "/" %}active{% endif %}" href="{{ "/" | relative_url }}">
+      <img class="brand-avatar" src="{{ "/assets/images/avatar.jpg" | relative_url }}"
+           alt="" width="26" height="26">
+      <span class="brand-text">{{ site.title }}</span>
+    </a>
+
+    <!-- 中：导航链接。桌面端随滚动折叠；移动端变为汉堡面板 -->
+    <div class="nav-links" id="nav-links">
+      <a href="{{ "/posts/" | relative_url }}" class="{% if current contains "/posts/" or page.layout == "post" %}active{% endif %}">文章</a>
+      <a href="{{ "/tags/" | relative_url }}" class="{% if current == "/tags/" %}active{% endif %}">标签</a>
+      <a class="nav-about {% if current == "/about/" %}active{% endif %}" href="{{ "/about/" | relative_url }}">关于</a>
+      <!-- 桌面隐藏（原样）；移动端作为面板最后一行 -->
+      <a class="nav-theme-link {% if current == "/theme/" %}active{% endif %}" href="{{ "/theme/" | relative_url }}">设置</a>
+    </div>
+
+    <!-- 右：主题菜单（桌面） -->
     <div class="theme-menu" id="theme-menu">
       <button type="button" class="theme-menu-trigger" id="theme-menu-trigger"
               aria-haspopup="menu" aria-expanded="false">主题</button>
@@ -29,6 +42,13 @@
         </div>
       </div>
     </div>
-    <a class="nav-theme-link {% if current == "/theme/" %}active{% endif %}" href="{{ "/theme/" | relative_url }}">设置</a>
+
+    <!-- 右：汉堡按钮（仅移动端显示） -->
+    <button type="button" class="nav-toggle" id="nav-toggle"
+            aria-label="导航菜单" aria-expanded="false" aria-controls="nav-links">
+      <span class="nav-toggle-bar" aria-hidden="true"></span>
+      <span class="nav-toggle-bar" aria-hidden="true"></span>
+      <span class="nav-toggle-bar" aria-hidden="true"></span>
+    </button>
   </nav>
 </header>

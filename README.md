@@ -80,7 +80,7 @@ Common places to update site settings and assets:
 
 - Site title / homepage name: `_config.yml` → `title`
 - Social links: `_includes/social.html` (replace placeholder UIDs for Bilibili / Zhihu / Weibo with real values). Email is taken from `_config.yml` → `email`.
-- Avatar: replace `assets/images/avatar.svg` with your avatar image.
+- Avatar: replace `assets/images/avatar.jpg` with your avatar image.
 - Signature: `_config.yml` → `signature`
 
 ## Deployment

@@ -1,13 +1,25 @@
 ---
 layout: default
 ---
-<article class="post">
-  <h1>{{ page.title }}</h1>
-  <div class="post-tags">{{ page.tags | join: ", " }}</div>
-  {% if page.d %}<p class="post-d">{{ page.d }}</p>{% endif %}
-  <time class="post-date">{{ page.date | date: site.date_format }}</time>
-  <div class="post-content">
-    {{ content }}
+{% comment %}
+  标题区（标题 / 标签 / 摘要 / 日期）独立成一张卡片，用 .glass-card 接入
+  玻璃风格系统：liquid 走扫光玻璃、frost 走纯模糊、solid 走白底。
+  正文 .post 不受影响，仍按站点策略强制高斯模糊（见 glass-overrides.css）。
+  两者都放在 .post-article 内，保证 <article> 语义完整（标题属于文章）。
+{% endcomment %}
+{% assign post_tags = page.tags | default: page.tag %}
+<article class="post-article">
+  <header class="post-header glass-card">
+    <h1>{{ page.title }}</h1>
+    {% if post_tags %}<div class="post-tags">{{ post_tags | join: ", " }}</div>{% endif %}
+    {% if page.d %}<p class="post-d">{{ page.d }}</p>{% endif %}
+    <time class="post-date">{{ page.date | date: site.date_format }}</time>
+  </header>
+
+  <div class="post">
+    <div class="post-content">
+      {{ content }}
+    </div>
   </div>
 </article>
 

@@ -5,7 +5,7 @@ layout: default
 <h1>文章</h1>
 <ul class="post-list">
   {% for post in site.posts limit: 10 offset: start %}
-  <li>
+  <li class="card glass-card">
     <h2><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h3>
     {% if post.d %}<p class="post-d">{{ post.d }}</p>{% endif %}
     <p class="excerpt">{{ post.excerpt | strip_html | truncate: 100 }}</p>

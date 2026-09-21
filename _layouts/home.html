@@ -5,7 +5,7 @@ layout: default
   <div class="home-main">
     <!-- 个人信息卡片 -->
     <section class="card profile-card glass-card">
-      <img class="avatar" src="{{ "/assets/images/avatar.svg" | relative_url }}" alt="{{ site.title }}">
+      <img class="avatar" src="{{ "/assets/images/avatar.jpg" | relative_url }}" alt="{{ site.title }}">
       <div class="profile-info">
         <h1 class="name">{{ site.title }}</h1>
         <p class="signature">{{ site.signature }}</p>
@@ -14,7 +14,7 @@ layout: default
 
     <!-- 最新文章 -->
     <div class="home-feed">
-      {% for post in site.posts limit: 10 %}
+      {% for post in site.posts limit: 3 %}
       <article class="card feed-item glass-card">
         <h2 class="feed-title"><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
         {% if post.d %}<p class="feed-desc">{{ post.d }}</p>{% endif %}

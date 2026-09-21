@@ -1,6 +1,6 @@
 ---
 layout: page
-title: tag
+title: Tags - 标签
 permalink: /tags/
 ---
 {% for tag in site.tags %}

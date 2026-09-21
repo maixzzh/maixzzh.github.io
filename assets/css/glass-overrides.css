@@ -226,23 +226,21 @@ html[data-glass="solid"] .feed-item.glass-card:hover {
   }
 }
 
-/* ---------- 文章页/标签页正文卡片：为阅读体验强制 frost 或 solid ----------
-   .post/.page 不使用液态玻璃（长文阅读时扫光/色散干扰）；
-   liquid / frost 模式均显示为高斯模糊高透明，solid 模式还原实心白。
+/* ---------- 文章正文卡片：为阅读体验强制 frost 或 solid ----------
+   只有长正文走这条策略（扫光/色散干扰阅读）。
+   文章标题卡 .post-header、/posts/ 列表、标签页 / 关于页（.page）
+   都已改用 .glass-card，正常参与玻璃风格系统，不在此列。
    post.css 在后加载且同为 (0,1,0)，故此处必须用 html[data-glass]
    作用域选择器（0,2,1）才能压过它 */
 html[data-glass="liquid"] .post,
-html[data-glass="frost"] .post,
-html[data-glass="liquid"] .page,
-html[data-glass="frost"] .page {
+html[data-glass="frost"] .post {
   background: var(--post-frost-bg);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   box-shadow: none;
 }
 
-html[data-glass="solid"] .post,
-html[data-glass="solid"] .page {
+html[data-glass="solid"] .post {
   background: var(--card);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
@@ -462,5 +460,335 @@ html[data-glass="solid"] .page {
   .theme-menu-panel,
   .theme-menu-sub {
     transition: none;
+  }
+}
+
+/* ============================================================
+   悬浮胶囊导航（仅 liquid / frost）
+   ------------------------------------------------------------
+   solid 模式刻意保持「通栏直角白条」，故胶囊规则一律以
+   html[data-glass="liquid"] / [data-glass="frost"] 限定。
+   JS 只负责切 .is-shrunk，风格隔离与降级全部由 CSS 承担。
+   ============================================================ */
+
+/* ---------- 0. 基线：让新增的 .nav-links 包裹层对 solid 完全透明 ----------
+   display:contents 使包裹层自身不产生盒子，其子元素直接成为 .site-nav 的
+   flex 项 —— solid 模式下（含移动端换行）布局与重构前逐像素一致 */
+.nav-links {
+  display: contents;
+}
+
+/* 品牌区：头像 + 名字（solid 下同样显示头像） */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-avatar {
+  display: block;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+  transition: width var(--nav-dur, 0.5s) var(--nav-ease, ease),
+              height var(--nav-dur, 0.5s) var(--nav-ease, ease);
+}
+
+/* ---------- 1. 胶囊外壳 ---------- */
+html[data-glass="liquid"] .site-header.glass,
+html[data-glass="frost"]  .site-header.glass {
+  /* 令牌：定义在外壳上，后代继承 */
+  --nav-pill-top: 20px;            /* 静止态距顶 */
+  --nav-pill-top-shrunk: 12px;     /* 收缩态距顶 */
+  --nav-pad-y: 8px;                /* 静止态内边距 */
+  --nav-pad-x: 16px;
+  --nav-pad-y-shrunk: 6px;
+  --nav-pad-x-shrunk: 12px;
+  --nav-ease: cubic-bezier(0.25, 1, 0.5, 1);
+  --nav-dur: 0.5s;
+  --nav-dur-fast: 0.35s;
+
+  position: fixed;                 /* 脱离文档流，悬浮于插画背景之上 */
+  top: var(--nav-pill-top);
+  left: 50%;
+  transform: translateX(-50%);     /* 水平居中 */
+  width: fit-content;              /* 宽度随内容自适应 → 链接折叠后自然变窄 */
+  max-width: calc(100vw - 32px);
+  --gr-radius: 9999px;             /* 真胶囊（等效需求里的 50px，内容变高也不破）；
+                                      .glass::before/::after 用 inherit，扫光与色散边缘自动跟随圆角 */
+  border-bottom: none;             /* 压过本文件上方的吸顶头下边框 */
+
+  /* 只过渡 top：backdrop-filter 与 transform 同时动画会触发背景重采样瑕疵；
+     这里只动一个 fixed 元素的 top，开销可忽略 */
+  transition: top var(--nav-dur) var(--nav-ease);
+}
+
+/* 收缩态：位置贴近边缘 */
+html[data-glass="liquid"] .site-header.is-shrunk,
+html[data-glass="frost"]  .site-header.is-shrunk {
+  top: var(--nav-pill-top-shrunk);
+}
+
+/* ---------- 2. 内层：紧凑内边距（压过 main.css 的 1000px 通栏布局） ---------- */
+html[data-glass="liquid"] .site-header .site-nav,
+html[data-glass="frost"]  .site-header .site-nav {
+  max-width: none;
+  margin: 0;
+  min-height: 0;                   /* 压过 main.css 的 56px */
+  gap: 0;                          /* 间距改由子元素 margin 控制：gap 的过渡在旧 Safari 上不可靠 */
+  padding: var(--nav-pad-y) var(--nav-pad-x);
+  transition: padding var(--nav-dur) var(--nav-ease);
+}
+
+html[data-glass="liquid"] .site-header.is-shrunk .site-nav,
+html[data-glass="frost"]  .site-header.is-shrunk .site-nav {
+  padding: var(--nav-pad-y-shrunk) var(--nav-pad-x-shrunk);
+}
+
+/* 收缩：头像缩小 */
+html[data-glass="liquid"] .site-header.is-shrunk .brand-avatar,
+html[data-glass="frost"]  .site-header.is-shrunk .brand-avatar {
+  width: 20px;
+  height: 20px;
+}
+
+/* ---------- 3. 品牌文字折叠（桌面与移动端都折叠：移动端收缩态只留头像 + ☰） ----------
+   用 max-width 折叠（可过渡），而非 width:0（auto→0 不可过渡） */
+.brand-text {
+  display: inline-block;
+  max-width: 8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 1;
+  visibility: visible;
+  transition: max-width var(--nav-dur, 0.5s) var(--nav-ease, ease),
+              opacity var(--nav-dur-fast, 0.35s) var(--nav-ease, ease),
+              visibility 0s 0s;
+}
+
+html[data-glass="liquid"] .site-header.is-shrunk .brand-text,
+html[data-glass="frost"]  .site-header.is-shrunk .brand-text {
+  max-width: 0;
+  opacity: 0;
+  /* visibility 延后到淡出播完再翻转：既不截断动画，
+     又把元素移出 Tab 焦点序列（opacity:0 的元素仍可被聚焦） */
+  transition: max-width var(--nav-dur) var(--nav-ease),
+              opacity var(--nav-dur-fast) var(--nav-ease),
+              visibility 0s var(--nav-dur);
+  visibility: hidden;
+}
+
+/* 「设置」链接的显隐规则必须带上 .site-header 提高特异性（0,3,1）：
+   下方 `.nav-links a` 的规则同为 (0,2,1) 且更靠后，否则会把设置链接
+   变成 inline-block 而显示出来。桌面隐藏（移动端在汉堡面板内显示） */
+html[data-glass="liquid"] .theme-menu,
+html[data-glass="frost"]  .theme-menu { margin-left: 8px; }
+
+/* 品牌去掉 main.css 的 active 下划线（胶囊里太局促）：
+   头像 + 蓝色文字已足够表示「当前在首页」。桌面/移动端都生效 */
+html[data-glass="liquid"] .site-header .brand.active,
+html[data-glass="frost"]  .site-header .brand.active { border-bottom: none; }
+
+/* ---------- 4. 桌面端导航链接：胶囊化 + 折叠 ----------
+   整体限定 ≥769px：移动端链接已搬进汉堡面板，若折叠规则在移动端生效，
+   面板打开且页面已滚动时链接会被压成 0 宽 */
+@media (min-width: 769px) {
+  html[data-glass="liquid"] .nav-links,
+  html[data-glass="frost"]  .nav-links {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  html[data-glass="liquid"] .brand,
+  html[data-glass="frost"]  .brand { margin-right: 16px; }   /* 与 .nav-links 的间距 */
+
+  /* 桌面隐藏「设置」链接（移动端在汉堡面板内显示）。
+     带 .site-header 提特异性，压过下方 `.nav-links a` 的 display:inline-block */
+  html[data-glass="liquid"] .site-header .nav-theme-link,
+  html[data-glass="frost"]  .site-header .nav-theme-link { display: none; }
+
+  html[data-glass="liquid"] .nav-links a,
+  html[data-glass="frost"]  .nav-links a {
+    display: inline-block;
+    max-width: 6rem;
+    padding: 6px 12px;
+    margin: 0 6px;
+    border-radius: 9999px;
+    white-space: nowrap;
+    overflow: hidden;
+    opacity: 1;
+    visibility: visible;
+    /* 折叠过渡与悬停过渡必须写在同一条 transition 里，否则互相覆盖 */
+    transition: max-width var(--nav-dur) var(--nav-ease),
+                opacity var(--nav-dur-fast) var(--nav-ease),
+                padding var(--nav-dur) var(--nav-ease),
+                margin var(--nav-dur) var(--nav-ease),
+                background 0.2s, color 0.2s,
+                visibility 0s 0s;
+  }
+
+  html[data-glass="liquid"] .site-header.is-shrunk .nav-links a,
+  html[data-glass="frost"]  .site-header.is-shrunk .nav-links a {
+    max-width: 0;
+    opacity: 0;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: 0;
+    margin-right: 0;
+    visibility: hidden;
+    transition: max-width var(--nav-dur) var(--nav-ease),
+                opacity var(--nav-dur-fast) var(--nav-ease),
+                padding var(--nav-dur) var(--nav-ease),
+                margin var(--nav-dur) var(--nav-ease),
+                background 0.2s, color 0.2s,
+                visibility 0s var(--nav-dur);
+  }
+
+  /* 胶囊里下划线太局促，active 改用圆角底（压过 main.css 的 .site-nav a.active） */
+  html[data-glass="liquid"] .nav-links a.active,
+  html[data-glass="frost"]  .nav-links a.active {
+    border-bottom: none;
+    background: var(--hover-bg);
+  }
+
+  /* 品牌同理去掉下划线：头像 + 蓝色文字已足够表示「当前在首页」 */
+
+  /* 压过 main.css 的 .site-nav .nav-about{margin-left:auto}（现由 .nav-links 分组承担） */
+  html[data-glass="liquid"] .nav-links .nav-about,
+  html[data-glass="frost"]  .nav-links .nav-about { margin-left: 0; }
+}
+
+/* ---------- 5. 为 fixed 胶囊让出文档流空间 ---------- */
+html[data-glass="liquid"] body,
+html[data-glass="frost"]  body { padding-top: 88px; }
+
+/* ---------- 6. 汉堡按钮：桌面隐藏（移动端见下） ---------- */
+.nav-toggle { display: none; }
+
+/* ============================================================
+   移动端（≤768px，仅 liquid / frost）：胶囊 + 汉堡面板
+   solid 模式不进入此块，保持原有的换行通栏导航
+   ============================================================ */
+@media (max-width: 768px) {
+  html[data-glass="liquid"] .site-header.glass,
+  html[data-glass="frost"]  .site-header.glass {
+    width: calc(100% - 24px);      /* 同 iOS Safari：宽度固定、只收缩高度 */
+    max-width: 420px;
+  }
+
+  html[data-glass="liquid"] .site-header .site-nav,
+  html[data-glass="frost"]  .site-header .site-nav {
+    justify-content: space-between;
+    padding: 8px 12px;
+  }
+
+  html[data-glass="liquid"] body,
+  html[data-glass="frost"]  body { padding-top: 80px; }
+
+  html[data-glass="liquid"] .brand,
+  html[data-glass="frost"]  .brand { margin-right: 0; }
+
+  /* —— 链接组 → 下拉面板 ——
+     用实底 var(--card)，与既有 .theme-menu-panel 的做法一致：
+     玻璃外壳内部再套 backdrop-filter 会以「已过滤的父层」为背景，观感差且开销高；
+     且父级的 backdrop-filter 会成为 fixed 后代的包含块，故面板只能用 absolute
+     （不能 fixed 到视口） */
+  html[data-glass="liquid"] .site-header .nav-links,
+  html[data-glass="frost"]  .site-header .nav-links {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 10;                   /* 需 > .glass::before(3) / ::after(2) */
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--card);
+    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.35);
+  }
+
+  html[data-glass="liquid"] .site-header.nav-open .nav-links,
+  html[data-glass="frost"]  .site-header.nav-open .nav-links { display: flex; }
+
+  html[data-glass="liquid"] .site-header .nav-links a,
+  html[data-glass="frost"]  .site-header .nav-links a {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border-bottom: none;
+  }
+
+  html[data-glass="liquid"] .site-header .nav-links a.active,
+  html[data-glass="frost"]  .site-header .nav-links a.active { background: var(--hover-bg); }
+
+  /* 设置链接：面板内的普通一行（与桌面隐藏规则同特异性，靠媒体查询互斥；
+     不改本文件既有的 solid 移动端规则） */
+  html[data-glass="liquid"] .site-header .nav-theme-link,
+  html[data-glass="frost"]  .site-header .nav-theme-link { display: block; margin: 0; }
+
+  /* —— 汉堡按钮 —— */
+  html[data-glass="liquid"] .nav-toggle,
+  html[data-glass="frost"]  .nav-toggle {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 34px;
+    height: 34px;
+    padding: 0 7px;
+    border: 0;
+    border-radius: 9999px;
+    background: transparent;
+    cursor: pointer;
+    flex: none;
+  }
+
+  html[data-glass="liquid"] .nav-toggle:hover,
+  html[data-glass="frost"]  .nav-toggle:hover { background: var(--hover-bg); }
+
+  html[data-glass="liquid"] .nav-toggle:focus-visible,
+  html[data-glass="frost"]  .nav-toggle:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+  }
+
+  html[data-glass="liquid"] .nav-toggle-bar,
+  html[data-glass="frost"]  .nav-toggle-bar {
+    display: block;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--text);
+    transition: transform 0.3s var(--nav-ease), opacity 0.2s;
+  }
+
+  /* 展开时三条横线变 ✕ */
+  html[data-glass="liquid"] .site-header.nav-open .nav-toggle-bar:nth-child(1),
+  html[data-glass="frost"]  .site-header.nav-open .nav-toggle-bar:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+  html[data-glass="liquid"] .site-header.nav-open .nav-toggle-bar:nth-child(2),
+  html[data-glass="frost"]  .site-header.nav-open .nav-toggle-bar:nth-child(2) { opacity: 0; }
+  html[data-glass="liquid"] .site-header.nav-open .nav-toggle-bar:nth-child(3),
+  html[data-glass="frost"]  .site-header.nav-open .nav-toggle-bar:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+}
+
+/* ---------- 无障碍：尊重系统「减少动态效果」 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html[data-glass="liquid"] .site-header.glass,
+  html[data-glass="frost"]  .site-header.glass,
+  html[data-glass="liquid"] .site-header .site-nav,
+  html[data-glass="frost"]  .site-header .site-nav,
+  .brand-avatar,
+  .brand-text,
+  html[data-glass="liquid"] .nav-links a,
+  html[data-glass="frost"]  .nav-links a,
+  .nav-toggle-bar {
+    transition: none !important;
   }
 }
