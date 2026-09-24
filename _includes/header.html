@@ -17,6 +17,23 @@
       <a class="nav-theme-link {% if current == "/theme/" %}active{% endif %}" href="{{ "/theme/" | relative_url }}">设置</a>
     </div>
 
+    <!-- 搜索：静止是一个 34px 圆点，点击拉伸成输入框（iOS 26 风格）。
+         必须是 .site-nav 的直接子元素——放进 .nav-links 会在移动端被汉堡面板吞掉，
+         放进 .theme-menu 会跟着移动端 display:none 一起消失 -->
+    <div class="nav-search" id="nav-search">
+      <button type="button" class="nav-search-toggle" id="nav-search-toggle"
+              aria-label="搜索文章" aria-expanded="false" aria-controls="nav-search-layer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" aria-hidden="true" focusable="false">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.2" y1="16.2" x2="21" y2="21"></line>
+        </svg>
+      </button>
+      <input type="search" class="nav-search-input" id="nav-search-input"
+             placeholder="搜索文章…" aria-label="搜索文章" autocomplete="off">
+      <button type="button" class="nav-search-close" id="nav-search-close" aria-label="关闭搜索">✕</button>
+    </div>
+
     <!-- 右：主题菜单（桌面） -->
     <div class="theme-menu" id="theme-menu">
       <button type="button" class="theme-menu-trigger" id="theme-menu-trigger"
@@ -52,3 +69,15 @@
     </button>
   </nav>
 </header>
+
+<!-- 顶栏搜索结果面板。
+     刻意放在 <header> 之外：header 自身带 backdrop-filter，它既是 position:fixed
+     后代的包含块（面板会以 header 而非视口为基准定位），又会让面板的模糊以
+     「已模糊的父层」为背景而显得浑浊。放到外面才能拿到真正的高斯模糊。
+     面板位置由 search.js 实测胶囊底边后写入 --nav-search-top -->
+<div class="nav-search-layer" id="nav-search-layer">
+  <div class="nav-search-panel" role="region" aria-label="搜索结果">
+    <p class="nav-search-status" id="nav-search-status" role="status" aria-live="polite"></p>
+    <div class="nav-search-results" id="nav-search-results"></div>
+  </div>
+</div>

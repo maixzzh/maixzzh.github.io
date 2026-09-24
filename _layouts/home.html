@@ -12,8 +12,19 @@ layout: default
       </div>
     </section>
 
-    <!-- 最新文章 -->
-    <div class="home-feed">
+    <!-- 站内搜索：检索 _posts 全部文章的标题与正文 -->
+    <section class="card home-search glass-card" id="home-search">
+      <svg class="home-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="16.2" y1="16.2" x2="21" y2="21"></line>
+      </svg>
+      <input type="search" id="home-search-input" class="home-search-input"
+             placeholder="搜索文章标题或正文…" aria-label="搜索文章" autocomplete="off">
+    </section>
+
+    <!-- 最新文章 / 搜索结果（内容由 Jekyll 渲染，搜索时由 search.js 接管） -->
+    <div class="home-feed" id="home-feed">
       {% for post in site.posts limit: 3 %}
       <article class="card feed-item glass-card">
         <h2 class="feed-title"><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>

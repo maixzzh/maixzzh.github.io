@@ -1,0 +1,423 @@
+/* ============================================================
+   站内搜索：首页内嵌 + 顶栏全局
+   ------------------------------------------------------------
+   本文件最后加载（排在 post.css 之后），因此与 glass-overrides.css /
+   post.css 特异性相同的规则靠顺序取胜，不必再堆 html[data-glass] 前缀。
+
+   两套玻璃刻意不同：
+     · 首页内嵌搜索 —— 用 .glass-card，跟随首页的 Liquid 玻璃
+       （扫光、色散边缘、呼吸高光）
+     · 顶栏结果面板 —— 不带 .glass / .glass-card，只有纯 backdrop-filter
+       模糊，因此天然不会继承上面那些装饰，也不会悬停上浮
+   ============================================================ */
+
+/* ============================================================
+   A. 首页内嵌搜索卡片
+   ============================================================ */
+.home-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  /* 不启用 .glass-card 的悬停上浮：卡片里是可点的输入框，
+     上浮会让输入框在鼠标底下移动 */
+}
+
+.home-search.glass-card:hover {
+  transform: none;
+}
+
+/* 聚焦反馈走边框：.card 已给 1px 边框，改色即可，不叠加额外阴影 */
+.home-search:focus-within {
+  border-color: var(--blue);
+}
+
+.home-search-icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--text-3);
+  transition: color .2s;
+}
+
+.home-search:focus-within .home-search-icon {
+  color: var(--blue);
+}
+
+.home-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: inherit;
+  font-size: .9375rem;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  outline: none;
+}
+
+.home-search-input::placeholder {
+  color: var(--text-3);
+}
+
+/* ============================================================
+   B. 顶栏搜索控件（所有风格都可用，故不加 html[data-glass] 限定）
+   ============================================================ */
+.nav-search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  width: 34px;                /* 静止态：一个圆点 */
+  height: 34px;
+  border-radius: 9999px;
+  overflow: hidden;           /* 裁掉尚未展开的输入框与关闭按钮 */
+  transition: width var(--nav-dur, .5s) var(--nav-ease, ease),
+              background-color .25s ease,
+              box-shadow .25s ease;
+}
+
+/* 展开态：从圆点拉伸成一条输入框（与让位折叠同时进行，整体就是胶囊在形变） */
+.site-header.is-searching .nav-search {
+  width: min(360px, 46vw);
+  background: var(--control-bg);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* 与相邻控件的间距，规则同既有 .theme-menu{ margin-left: 8px } */
+html[data-glass="liquid"] .site-header .nav-search,
+html[data-glass="frost"]  .site-header .nav-search {
+  margin-left: 8px;
+}
+
+.nav-search-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background-color .2s, color .2s;
+}
+
+.nav-search-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.nav-search-toggle:hover {
+  background: var(--hover-bg);
+  color: var(--blue);
+}
+
+.nav-search-toggle:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.nav-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: inherit;
+  font-size: .9375rem;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  outline: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease .08s;
+}
+
+.site-header.is-searching .nav-search-input {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.nav-search-input::placeholder {
+  color: var(--text-3);
+}
+
+/* 去掉 WebKit 原生放大镜与清除按钮，避免与自绘图标重复 */
+.nav-search-input::-webkit-search-decoration,
+.nav-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.nav-search-close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin-right: 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: .875rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease .08s, background-color .2s, color .2s;
+}
+
+.site-header.is-searching .nav-search-close {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.nav-search-close:hover {
+  background: var(--hover-bg);
+  color: var(--blue);
+}
+
+.nav-search-close:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+/* ---------- 让位：搜索展开时链接组 / 主题菜单 折叠（仅桌面 + 胶囊风格） ----------
+   复用 .is-shrunk 那套 max-width + opacity + visibility 折叠语法，
+   但用独立的 .is-searching 类：.is-shrunk 是 nav-shrink.js 的滚动状态
+   （还会改 top 与头像尺寸），共用会让两个状态机互相覆盖。
+   solid 模式顶栏是通栏白条、没有胶囊折叠机制，故不参与 */
+@media (min-width: 769px) {
+  /* .nav-links 里没有绝对定位后代，可以常驻 overflow: hidden——
+     折叠时必须靠它把溢出的链接裁掉 */
+  html[data-glass="liquid"] .site-header .nav-links,
+  html[data-glass="frost"]  .site-header .nav-links {
+    max-width: 30rem;         /* 折叠起点，高于自然宽度故平时无效果 */
+    overflow: hidden;
+    opacity: 1;
+    visibility: visible;
+    transition: max-width var(--nav-dur, .5s) var(--nav-ease, ease),
+                margin var(--nav-dur, .5s) var(--nav-ease, ease),
+                opacity var(--nav-dur-fast, .35s) var(--nav-ease, ease),
+                visibility 0s 0s;
+  }
+
+  /* .theme-menu 内含绝对定位的两级下拉面板，而它就是面板的包含块，
+     所以这里【绝不能】写 overflow: hidden —— 那会把下拉面板整个裁掉。
+     只在搜索展开时才加，那时菜单本来就被 visibility: hidden 藏起来了 */
+  html[data-glass="liquid"] .site-header .theme-menu,
+  html[data-glass="frost"]  .site-header .theme-menu {
+    max-width: 30rem;
+    opacity: 1;
+    visibility: visible;
+    transition: max-width var(--nav-dur, .5s) var(--nav-ease, ease),
+                margin var(--nav-dur, .5s) var(--nav-ease, ease),
+                opacity var(--nav-dur-fast, .35s) var(--nav-ease, ease),
+                visibility 0s 0s;
+  }
+
+  html[data-glass="liquid"] .site-header.is-searching .nav-links,
+  html[data-glass="frost"]  .site-header.is-searching .nav-links,
+  html[data-glass="liquid"] .site-header.is-searching .theme-menu,
+  html[data-glass="frost"]  .site-header.is-searching .theme-menu {
+    max-width: 0;
+    margin-left: 0;
+    margin-right: 0;
+    opacity: 0;
+    overflow: hidden;         /* 折叠期间裁掉溢出的内容（不可动画，瞬时生效） */
+    visibility: hidden;       /* 移出 Tab 焦点序列 */
+    transition: max-width var(--nav-dur, .5s) var(--nav-ease, ease),
+                margin var(--nav-dur, .5s) var(--nav-ease, ease),
+                opacity var(--nav-dur-fast, .35s) var(--nav-ease, ease),
+                visibility 0s var(--nav-dur, .5s);
+  }
+
+  /* 主题菜单若正开着，其面板的 visibility 是自身规则给的，
+     不会被父级的 hidden 继承覆盖，必须一并压掉 */
+  html[data-glass="liquid"] .site-header.is-searching .theme-menu-panel,
+  html[data-glass="frost"]  .site-header.is-searching .theme-menu-panel,
+  html[data-glass="liquid"] .site-header.is-searching .theme-menu-sub,
+  html[data-glass="frost"]  .site-header.is-searching .theme-menu-sub {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* 品牌文字在所有宽度下都让位（移动端尤其需要，胶囊窄） */
+html[data-glass="liquid"] .site-header.is-searching .brand-text,
+html[data-glass="frost"]  .site-header.is-searching .brand-text {
+  max-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: max-width var(--nav-dur, .5s) var(--nav-ease, ease),
+              opacity var(--nav-dur-fast, .35s) var(--nav-ease, ease),
+              visibility 0s var(--nav-dur, .5s);
+}
+
+/* ============================================================
+   C. 顶栏搜索结果面板 —— 高斯模糊，与首页 Liquid 玻璃是两套样式
+   ------------------------------------------------------------
+   刻意不带 .glass / .glass-card，所以不会继承扫光、色散边缘、呼吸高光，
+   也不会悬停上浮。放在 <header> 之外（见 header.html 注释），
+   否则会以 header 为 fixed 包含块、且模糊会以已模糊的父层为背景
+   ============================================================ */
+.nav-search-layer {
+  position: fixed;
+  left: 50%;
+  top: var(--nav-search-top, 88px);   /* 由 search.js 实测胶囊底边后写入 */
+  z-index: 200;                       /* 需高于 .site-header 的 100 */
+  width: min(720px, calc(100vw - 32px));
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(-8px);
+  transition: opacity .22s ease,
+              transform .28s cubic-bezier(.25, 1, .5, 1),
+              visibility 0s .28s;
+}
+
+.nav-search-layer.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+  transition: opacity .22s ease,
+              transform .28s cubic-bezier(.25, 1, .5, 1),
+              visibility 0s 0s;
+}
+
+.nav-search-panel {
+  overflow-y: auto;
+  max-height: min(60vh, 460px);
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--frost-card-bg);          /* 浅 .78 / 深 .85，深浅色都有值 */
+  -webkit-backdrop-filter: blur(10px);       /* 与站点 frost 模式同参数：纯模糊、无 saturate */
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.35);
+}
+
+/* 老浏览器无 backdrop-filter：底色加浓保证可读（沿用站点既有回退令牌） */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .nav-search-panel {
+    background: var(--glass-fallback-bg);
+  }
+}
+
+.nav-search-status {
+  margin: 0;
+  padding: 6px 12px;
+  font-size: .8125rem;
+  color: var(--text-3);
+}
+
+.nav-search-status:empty {
+  display: none;
+}
+
+/* ---------- 结果行：只有标题 / 日期 / 描述（无标签、无正文） ---------- */
+.nav-search-item {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--text);
+  transition: background-color .18s;
+}
+
+.nav-search-item:hover {
+  background: var(--hover-bg);
+  text-decoration: none;
+}
+
+.nav-search-item:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.nav-search-item-title {
+  display: block;
+  font-weight: 600;
+  font-size: .9375rem;
+  line-height: 1.45;
+}
+
+.nav-search-item-meta {
+  display: flex;
+  gap: 10px;
+  margin-top: 2px;
+  font-size: .8125rem;
+  color: var(--text-3);
+}
+
+.nav-search-item-desc {
+  display: block;
+  margin-top: 2px;
+  font-size: .875rem;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;          /* 单行省略：窄屏不会把卡片撑乱 */
+}
+
+/* ============================================================
+   D. 关键词高亮 / 无结果卡片
+   ============================================================ */
+.home-feed mark,
+.nav-search-panel mark {
+  background-color: var(--mark-bg);     /* 复用站点既有高亮令牌，深浅色都有值 */
+  color: var(--mark-text);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+/* 无结果卡片不可点击：标题没有 <a>；同时去掉悬停上浮，
+   不然会暗示它可以点。必须压过 .glass-card:hover(0,1,1) 与
+   .feed-item.glass-card:hover(0,2,1)，靠本文件最后加载取胜 */
+.feed-item.glass-card.search-empty:hover {
+  transform: none;
+}
+
+/* ============================================================
+   E. 移动端
+   ============================================================ */
+@media (max-width: 768px) {
+  /* 品牌文字已折叠，胶囊里只剩头像，搜索框可以占满剩余宽度 */
+  .site-header.is-searching .nav-search {
+    width: calc(100% - 56px);
+  }
+
+  /* 汉堡按钮也让位，避免和搜索框抢空间 */
+  html[data-glass="liquid"] .site-header.is-searching .nav-toggle,
+  html[data-glass="frost"]  .site-header.is-searching .nav-toggle {
+    max-width: 0;
+    opacity: 0;
+    visibility: hidden;
+    overflow: hidden;
+    margin-left: 0;
+  }
+
+  .nav-search-layer {
+    width: calc(100vw - 24px);
+  }
+
+  .nav-search-panel {
+    max-height: 62vh;
+  }
+}
+
+/* ============================================================
+   F. 无障碍：尊重系统「减少动态效果」
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .home-search-icon,
+  .nav-search,
+  .nav-search-input,
+  .nav-search-close,
+  .nav-search-layer,
+  .nav-search-item,
+  .site-header .nav-links,
+  .site-header .theme-menu,
+  .site-header .brand-text,
+  .site-header .nav-toggle {
+    transition: none !important;
+  }
+}

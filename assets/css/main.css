@@ -348,10 +348,10 @@ h1, h2, h3 {
   flex-direction: column;
 }
 
+/* 图标已移除，故不再需要 flex 居中与 gap；
+   用 display: block 让链接占满整行，悬停底色才能覆盖整行 */
 .social-link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: block;
   color: var(--text);
   font-size: 0.875rem;
   padding: 10px 12px;
@@ -363,15 +363,6 @@ h1, h2, h3 {
   background: var(--hover-bg);
   color: var(--blue);
   text-decoration: none;
-}
-
-.social-link svg {
-  color: var(--text-3);
-  transition: color 0.2s;
-}
-
-.social-link:hover svg {
-  color: var(--blue);
 }
 
 /* ---------- 文章列表 ---------- */

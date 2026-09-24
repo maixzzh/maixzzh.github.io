@@ -35,7 +35,12 @@
 <link rel="stylesheet" href="{{ "/assets/css/glass.css" | relative_url }}">
 <link rel="stylesheet" href="{{ "/assets/css/glass-overrides.css" | relative_url }}">
 <link rel="stylesheet" href="{{ "/assets/css/post.css" | relative_url }}">
+<!-- 搜索样式排在最后：与 glass-overrides/post 特异性相同时靠顺序取胜 -->
+<link rel="stylesheet" href="{{ "/assets/css/search.css" | relative_url }}">
 <script src="{{ "/assets/js/glass-style.js" | relative_url }}" defer></script>
 <script src="{{ "/assets/js/glass-theme.js" | relative_url }}" defer></script>
 <script src="{{ "/assets/js/theme-menu.js" | relative_url }}" defer></script>
 <script src="{{ "/assets/js/nav-shrink.js" | relative_url }}" defer></script>
+<!-- 搜索索引地址：走 relative_url 以兼容 baseurl；含前导斜杠，故用单引号包住 -->
+<script>window.SEARCH_INDEX = "{{ '/search.json' | relative_url }}";</script>
+<script src="{{ "/assets/js/search.js" | relative_url }}" defer></script>
