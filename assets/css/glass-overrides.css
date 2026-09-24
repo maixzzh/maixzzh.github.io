@@ -531,6 +531,16 @@ html[data-glass="frost"]  .site-header.is-shrunk {
   top: var(--nav-pill-top-shrunk);
 }
 
+/* 滚动到下方后 hover 临时展开：内容恢复全尺寸，但顶边钉在收缩位。
+   若顶边也跟着回到 20px，胶囊顶边会下移 8px——鼠标恰好停在这 8px 带内时
+   就被甩出胶囊触发 mouseleave，收缩后胶囊又回到鼠标下方，如此 enter/leave
+   反复抖动。钉住顶边后展开态完全包容收缩态，抖动不可能发生。
+   注：JS 在 hover 展开时移除 .is-shrunk 并加上 .is-hovered，二者互斥 */
+html[data-glass="liquid"] .site-header.is-hovered,
+html[data-glass="frost"]  .site-header.is-hovered {
+  top: var(--nav-pill-top-shrunk);
+}
+
 /* ---------- 2. 内层：紧凑内边距（压过 main.css 的 1000px 通栏布局） ---------- */
 html[data-glass="liquid"] .site-header .site-nav,
 html[data-glass="frost"]  .site-header .site-nav {
