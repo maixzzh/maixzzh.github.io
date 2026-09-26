@@ -8,12 +8,29 @@ layout: default
   两者都放在 .post-article 内，保证 <article> 语义完整（标题属于文章）。
 {% endcomment %}
 {% assign post_tags = page.tags | default: page.tag %}
+{% comment %}
+  2 级私密文章的标识：日期 + slug（slug 就是文件名主干，文件名本身已含日期）。
+  分享端与校验端都用这一个值，由同一份 Liquid 生成，必然一致。
+{% endcomment %}
+{% assign secret_id = page.date | date: site.date_format | append: "/" | append: page.slug %}
 <article class="post-article">
   <header class="post-header glass-card">
     <h1>{{ page.title }}</h1>
     {% if post_tags %}<div class="post-tags">{{ post_tags | join: ", " }}</div>{% endif %}
     {% if page.d %}<p class="post-d">{{ page.d }}</p>{% endif %}
     <time class="post-date">{{ page.date | date: site.date_format }}</time>
+    {% if page.secret == 2 %}
+      {% comment %}
+        .post-date 的 padding-bottom 被 post.css 清零了，所以按钮自带 margin-top。
+        弹窗与内联脚本放这里：脚本不带 defer，会在所有 defer 脚本之前执行，
+        保证 secret.js 运行时 window.SECRET_PAGE 已就绪。
+      {% endcomment %}
+      <div class="post-actions">
+        <button type="button" class="post-share" id="post-share"
+                aria-haspopup="dialog" aria-expanded="false">分享</button>
+      </div>
+      <script>window.SECRET_PAGE = { id: {{ secret_id | jsonify }} };</script>
+    {% endif %}
   </header>
 
   <div class="post">
@@ -23,4 +40,13 @@ layout: default
   </div>
 </article>
 
-{% include gitalk.html %}
+{% if page.secret == 2 %}{% include secret-share.html id=secret_id %}{% endif %}
+
+{% comment %}
+  私密文章不接评论：gitalk 用 page.path 当 issue id，会给它建一个公开 issue，
+  标题和链接就泄漏了。当前 _config.yml 没有 gitalk 段（未启用），这行是预防。
+
+  条件写成 == 0 而不是 {% raw %}{% unless page.secret %}{% endraw %}：Liquid 里 0 是真值，
+  unless 0 为假，普通文章的评论区会被一并吃掉。
+{% endcomment %}
+{% if page.secret == 0 %}{% include gitalk.html %}{% endif %}

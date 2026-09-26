@@ -1,5 +1,10 @@
 <!DOCTYPE html>
-<html lang="{{ site.lang | default: "zh-CN" }}" data-glass="liquid" data-theme="light">
+{%- comment -%}
+  data-secret="2" 只在 2 级私密文章页出现。它必须在**首帧之前**就写进 HTML，
+  供 secret.css 把正文藏起来——否则会先闪一下正文再跳 404。
+  解锁后由 assets/js/secret.js 给同一个元素加 .secret-ok 放开。
+{%- endcomment -%}
+<html lang="{{ site.lang | default: "zh-CN" }}" data-glass="liquid" data-theme="light"{% if page.secret == 2 %} data-secret="2"{% endif %}>
 <head>
   {% include head.html %}
 </head>

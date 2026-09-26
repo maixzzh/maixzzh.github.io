@@ -1,6 +1,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-{% seo %}
+{% comment %}
+  私密文章整块换掉 {% seo %}：jekyll-seo-tag 会输出 <link rel="canonical">、
+  og:title/url/description 和 JSON-LD BlogPosting（含标题、日期、正文首段摘要），
+  而它**自己完全不输出 robots 标签**。只加 noindex 而保留 {% seo %} 是不彻底的
+  ——canonical/og/JSON-LD 照样把标题和摘要带出去。
+
+  必须写成 == 1 or == 2，不能写 {% raw %}{% if page.secret %}{% endraw %}：
+  Liquid 里 0 是真值，而 _config.yml 给所有 post 的默认密级就是 0，
+  写成真值判断会把普通文章的 canonical/og/JSON-LD 一并吃掉。
+{% endcomment %}
+{% if page.secret == 1 or page.secret == 2 %}
+  <title>{{ page.title }} | {{ site.title }}</title>
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="referrer" content="no-referrer">
+{% else %}
+  {% seo %}
+{% endif %}
 {% include head-custom.html %}
 <!-- 视觉风格 + 颜色主题预置：在样式表前写入 data-glass / data-theme，避免刷新闪动 -->
 <script>
@@ -37,10 +53,14 @@
 <link rel="stylesheet" href="{{ "/assets/css/post.css" | relative_url }}">
 <!-- 搜索样式排在最后：与 glass-overrides/post 特异性相同时靠顺序取胜 -->
 <link rel="stylesheet" href="{{ "/assets/css/search.css" | relative_url }}">
+<!-- 私密文章样式压在最后：分享弹窗要盖过 search.css 里 .nav-search-layer 的 z-index 200 -->
+<link rel="stylesheet" href="{{ "/assets/css/secret.css" | relative_url }}">
 <script src="{{ "/assets/js/glass-style.js" | relative_url }}" defer></script>
 <script src="{{ "/assets/js/glass-theme.js" | relative_url }}" defer></script>
 <script src="{{ "/assets/js/theme-menu.js" | relative_url }}" defer></script>
 <script src="{{ "/assets/js/nav-shrink.js" | relative_url }}" defer></script>
 <!-- 搜索索引地址：走 relative_url 以兼容 baseurl；含前导斜杠，故用单引号包住 -->
 <script>window.SEARCH_INDEX = "{{ '/search.json' | relative_url }}";</script>
+<script>window.SEARCH_SECRET_INDEX = "{{ '/search-secret.json' | relative_url }}";</script>
 <script src="{{ "/assets/js/search.js" | relative_url }}" defer></script>
+<script src="{{ "/assets/js/secret.js" | relative_url }}" defer></script>

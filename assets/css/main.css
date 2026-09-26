@@ -510,7 +510,36 @@ h1, h2, h3 {
 
 /* ---------- 响应式 ---------- */
 @media (max-width: 768px) {
-  body { background-attachment: scroll; }
+  /* 背景图：整幅固定居中，永远只铺一张，不平铺。
+     ----------------------------------------------------------
+     原先这里是 `body { background-attachment: scroll }`：scroll 让 cover 以
+     **body 的盒子**为定位区（长页可达数千像素高），图片被按那个尺寸放大成
+     一条窄切片，滚出 body 之后还会露出纯色底——观感就像是背景「铺」了一层。
+     改用独立图层 position:fixed，定位区恒为视口：图居中、只一张、滚动不动。
+     不直接用 background-attachment:fixed 是因为 iOS Safari 对它支持很差
+     （会退化成按元素尺寸铺排，正是要避免的效果）；position:fixed 到处都可靠。
+     图层压在 z-index:-1，所以 body 自身不能再画背景——颜色与图片一起搬到
+     这一层，否则 body 的背景色会盖在图上 */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--bg);
+    background-image: var(--body-bg-image);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  body {
+    background-color: transparent;
+    background-image: none;
+  }
+
+  /* body 已透明，画布底色交给 html：iOS 橡皮筋回弹时不至于露白 */
+  html { background-color: var(--bg); }
+
   .home {
     grid-template-columns: 1fr;
     gap: 12px;

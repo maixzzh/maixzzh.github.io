@@ -1,0 +1,49 @@
+---
+layout: null
+permalink: /feed.xml
+---
+{%- comment -%}
+  接管 jekyll-feed 的 /feed.xml。
+
+  为什么必须自己写：jekyll-feed 遍历 site.posts，且没有任何 frontmatter 排除开关
+  （它只认一个特例 draft: true），生成的 <content> 是**整篇正文**。
+  这份文件任何人都能直接下载，私密文章的全文会原样泄漏。
+
+  jekyll-feed 的生成器里有一句 `next if file_exists?(path)`——站点根目录存在
+  同名文件就跳过生成，所以这个文件能直接顶掉插件。内容照抄它的 Atom 模板，
+  只把循环集合换成按密级过滤后的。
+
+  注意：下面的 {% raw %}{%- -%}{% endraw %} 空白控制是必需的，XML 声明必须是输出的第一个字符，
+  否则文档不合法。posts_limit 沿用插件的默认值 10。
+{%- endcomment -%}
+{%- assign feed_posts = site.posts | where_exp: "p", "p.secret == 0" -%}
+{%- assign feed_posts = feed_posts | sort: "date" | reverse -%}
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" {% if site.lang %}xml:lang="{{ site.lang }}"{% endif %}>
+  <generator uri="https://jekyllrb.com/" version="{{ jekyll.version }}">Jekyll</generator>
+  <link href="{{ page.url | absolute_url }}" rel="self" type="application/atom+xml" />
+  <link href="{{ '/' | absolute_url }}" rel="alternate" type="text/html" {% if site.lang %}hreflang="{{ site.lang }}" {% endif %}/>
+  <updated>{{ site.time | date_to_xmlschema }}</updated>
+  <id>{{ page.url | absolute_url | xml_escape }}</id>
+  {% if site.title %}<title type="html">{{ site.title | smartify | xml_escape }}</title>{% endif %}
+  {% if site.description %}<subtitle>{{ site.description | xml_escape }}</subtitle>{% endif %}
+  {% for post in feed_posts limit: 10 %}
+    <entry{% if post.lang %}{{" "}}xml:lang="{{ post.lang }}"{% endif %}>
+      {% assign post_title = post.title | smartify | strip_html | normalize_whitespace | xml_escape %}
+      <title type="html">{{ post_title }}</title>
+      <link href="{{ post.url | absolute_url }}" rel="alternate" type="text/html" title="{{ post_title }}" />
+      <published>{{ post.date | date_to_xmlschema }}</published>
+      <updated>{{ post.last_modified_at | default: post.date | date_to_xmlschema }}</updated>
+      <id>{{ post.id | absolute_url | xml_escape }}</id>
+      <content type="html" xml:base="{{ post.url | absolute_url | xml_escape }}"><![CDATA[{{ post.content | strip }}]]></content>
+      {% if site.author %}<author><name>{{ site.author.name | default: site.author | xml_escape }}</name></author>{% endif %}
+      {% for tag in post.tags %}
+        <category term="{{ tag | xml_escape }}" />
+      {% endfor %}
+      {% assign post_summary = post.description | default: post.excerpt %}
+      {% if post_summary and post_summary != empty %}
+        <summary type="html"><![CDATA[{{ post_summary | strip_html | normalize_whitespace }}]]></summary>
+      {% endif %}
+    </entry>
+  {% endfor %}
+</feed>

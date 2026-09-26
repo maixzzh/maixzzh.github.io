@@ -2,15 +2,23 @@
 layout: default
 ---
 {% assign start = page.offset | default: 0 %}
+{% comment %}
+  只列 secret: 0。分页是手写的（posts/index.html 写死 offset 0、posts/page2 写死 10），
+  过滤后总篇数会变少，所以「下一页」必须基于过滤后的集合算，
+  列表本身也要判 start 是否已越界——否则 /posts/page2/ 会渲染出一个空列表。
+{% endcomment %}
+{% assign visible_posts = site.posts | where_exp: "p", "p.secret == 0" %}
 <h1>文章</h1>
 <ul class="post-list">
-  {% for post in site.posts limit: 10 offset: start %}
+  {% if start < visible_posts.size %}
+  {% for post in visible_posts limit: 10 offset: start %}
   <li class="card glass-card">
     <h2><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h3>
     {% if post.d %}<p class="post-d">{{ post.d }}</p>{% endif %}
     <p class="excerpt">{{ post.excerpt | strip_html | truncate: 100 }}</p>
   </li>
   {% endfor %}
+  {% endif %}
 </ul>
 <nav class="pagination">
   {% if start > 0 %}
@@ -18,7 +26,7 @@ layout: default
     <a href="{% if prev_num == 1 %}{{ "/posts/" | relative_url }}{% else %}{{ "/posts/page" | append: prev_num | append: "/" | relative_url }}{% endif %}">上一页</a>
   {% endif %}
   <span>第 {{ start | divided_by: 10 | plus: 1 }} 页</span>
-  {% assign remaining = site.posts.size | minus: start | minus: 10 %}
+  {% assign remaining = visible_posts.size | minus: start | minus: 10 %}
   {% if remaining > 0 %}
     {% assign next_num = start | divided_by: 10 | plus: 2 %}
     <a href="{{ "/posts/page" | append: next_num | append: "/" | relative_url }}">下一页</a>

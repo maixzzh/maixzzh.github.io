@@ -1,41 +1,88 @@
 /* 站内搜索：首页内嵌 + 顶栏全局
-   两套入口共用同一份 _posts 索引（/search.json）与匹配/高亮逻辑，
-   只在渲染层分叉：首页复用 .feed-item 卡片，顶栏用精简行。
+   两套入口共用同一份索引与匹配/高亮逻辑，只在渲染层分叉：
+   首页复用 .feed-item 卡片，顶栏用精简行。
    顶栏面板刻意是高斯模糊而非 Liquid 玻璃（见 search.css）。
+
+   密级：/search.json 在**构建期**就只收 secret 0 和 1，2 级根本不在里面；
+   2 级走 /search-secret.json，只有解锁后才拉取合并。前端过滤是第二道门，
+   真正起作用的是构建期的拆分（那份 JSON 含全文，谁都能 curl 下来）。
+   解锁入口：?secret=1（任意真值）或 Ctrl/Cmd+Shift+.，状态存 sessionStorage。
+   另支持 ?q=xxx 直接带词搜索。
    无依赖、defer 加载 */
 (function () {
   'use strict';
 
-  var INDEX_URL = window.SEARCH_INDEX || '/search.json';
+  var INDEX_URL        = window.SEARCH_INDEX || '/search.json';
+  var SECRET_INDEX_URL = window.SEARCH_SECRET_INDEX || '/search-secret.json';
   var DEBOUNCE  = 180;      /* 输入防抖：避免每敲一个字都全量重排 */
+  var UNLOCK_KEY = 'search-unlocked';   /* sessionStorage：关掉标签页即失效 */
+
+  /* ---------- 0. 密级状态 ---------- */
+  var unlocked = false;     /* 是否已解锁 2 级 */
+  var rerenders = [];       /* 各入口的渲染函数；解锁合并完成后统一重跑一次 */
+  var openNav = null;       /* 由 initNav 填充：让外部能展开顶栏面板并填入关键词 */
+
+  try { unlocked = sessionStorage.getItem(UNLOCK_KEY) === '1'; } catch (e) { /* 隐私模式 */ }
 
   /* ---------- 1. 索引：只取一次，加载期间排队等 ---------- */
   var items = null;
   var waiting = [];
+  var secretWaiting = [];
+
+  /* 统一走这里，省得两处 XHR 各写一遍错误处理。
+     失败一律回空数组，渲染层显示「无结果」 */
+  function get(url, cb) {
+    var req = new XMLHttpRequest();
+    req.open('GET', url, true);
+    req.onload = function () {
+      var list = [];
+      try { list = JSON.parse(req.responseText); } catch (e) { list = []; }
+      cb(list);
+    };
+    req.onerror = function () { cb([]); };
+    req.send();
+  }
+
+  /* 把小写副本挂到条目上，避免每次查询都对全文重复 toLowerCase */
+  function absorb(list) {
+    if (!items) { items = []; }
+    for (var i = 0; i < list.length; i++) {
+      var it = list[i];
+      it._t = (it.title || '').toLowerCase();
+      it._d = (it.desc  || '').toLowerCase();
+      it._b = (it.body  || '').toLowerCase();
+      items.push(it);
+    }
+  }
 
   function load(cb) {
     if (items) { cb(); return; }
     waiting.push(cb);
     if (waiting.length > 1) { return; }        /* 已在加载中，排队即可 */
-    var req = new XMLHttpRequest();
-    req.open('GET', INDEX_URL, true);
-    req.onload = function () {
-      var list = [];
-      try { list = JSON.parse(req.responseText); } catch (e) { list = []; }
-      items = [];
-      for (var i = 0; i < list.length; i++) {
-        var it = list[i];
-        /* 预先小写化，避免每次查询都对全文重复 toLowerCase */
-        it._t = (it.title || '').toLowerCase();
-        it._d = (it.desc  || '').toLowerCase();
-        it._b = (it.body  || '').toLowerCase();
-        items.push(it);
-      }
+    get(INDEX_URL, function (list) {
+      absorb(list);
       var q = waiting; waiting = [];
       for (var j = 0; j < q.length; j++) { q[j](); }
-    };
-    req.onerror = req.onload;                  /* 失败也放行，渲染层显示「无结果」 */
-    req.send();
+    });
+  }
+
+  /* 解锁：拉 2 级索引合并进 items，再让所有入口重跑一次渲染，
+     这样已经输在框里的关键词能立刻搜到新并入的文章 */
+  function unlock() {
+    if (unlocked) { return; }
+    unlocked = true;
+    try { sessionStorage.setItem(UNLOCK_KEY, '1'); } catch (e) { /* 隐私模式 */ }
+    load(function () {
+      secretWaiting.push(function () {
+        for (var i = 0; i < rerenders.length; i++) { rerenders[i](); }
+      });
+      if (secretWaiting.length > 1) { return; }   /* 已在加载中，排队即可 */
+      get(SECRET_INDEX_URL, function (list) {
+        absorb(list);
+        var q = secretWaiting; secretWaiting = [];
+        for (var j = 0; j < q.length; j++) { q[j](); }
+      });
+    });
   }
 
   /* ---------- 2. 匹配：子串 + 多词 AND + 字段加权 ---------- */
@@ -52,6 +99,10 @@
     var out = [];
     for (var i = 0; i < items.length; i++) {
       var it = items[i], score = 0, all = true;
+      /* 2 级只有在解锁后才参与匹配。构建期已经把 2 级从公开索引里拿掉了，
+         这里是第二道门（索引还没合并时 items 里本来也没有它们）。
+         jsonify 输出的是裸数字，但兜底一层 Number 转换，防手写索引出错 */
+      if (!unlocked && Number(it.secret || 0) > 1) { continue; }
       for (var t = 0; t < ts.length; t++) {
         var term = ts[t], hit = false;
         if (it._t.indexOf(term) >= 0) { score += 100; hit = true; }   /* 标题命中权重最高 */
@@ -149,6 +200,8 @@
 
     input.addEventListener('input', debounce(render, DEBOUNCE));
     input.addEventListener('search', render);   /* 点原生 ✕ 清空时立即还原 */
+
+    rerenders.push(render);      /* 解锁并入 2 级索引后要重跑，见 unlock() */
   }
 
   /* ---------- 5. 顶栏全局搜索 ---------- */
@@ -253,8 +306,64 @@
     }, { passive: true });
 
     window.addEventListener('resize', function () { if (isOpen()) { place(); } });
+
+    rerenders.push(render);      /* 解锁并入 2 级索引后要重跑，见 unlock() */
+
+    /* 对外只暴露「展开面板并填入关键词」这一件事，用于 ?q= */
+    openNav = function (q) {
+      setOpen(true);
+      if (q) { input.value = q; render(); }
+    };
   }
+
+  /* ---------- 6. 入口参数与快捷键 ---------- */
+  function readParam(name) {
+    var m = new RegExp('[?&]' + name + '=([^&#]*)').exec(window.location.search);
+    if (!m) { return null; }
+    try { return decodeURIComponent(m[1].replace(/\+/g, ' ')); } catch (e) { return m[1]; }
+  }
+
+  /* 把参数从地址栏抹掉，不刷新页面（replaceState 不触发导航） */
+  function stripParam(name) {
+    var s = window.location.search;
+    if (!s || s.length < 2) { return; }
+    var parts = s.slice(1).split('&'), out = [], i, k;
+    for (i = 0; i < parts.length; i++) {
+      if (!parts[i]) { continue; }
+      k = parts[i].split('=')[0];
+      try { k = decodeURIComponent(k); } catch (e) { /* 非法编码：按原样比 */ }
+      if (k === name) { continue; }
+      out.push(parts[i]);
+    }
+    try {
+      window.history.replaceState(null, '', window.location.pathname +
+        (out.length ? '?' + out.join('&') : '') + window.location.hash);
+    } catch (e) { /* 老浏览器：保留参数，只是地址栏没那么干净 */ }
+  }
+
+  /* 先把两个入口初始化好（rerenders 才有内容），再处理 URL 参数。
+     ?secret 的解锁是异步的（要拉索引），未解锁时的重渲染由 unlock() 负责 */
+  function boot() {
+    if (readParam('secret') !== null) {
+      unlock();
+      stripParam('secret');
+    }
+    var q = readParam('q');
+    if (q !== null) {
+      if (openNav) { openNav(q); }    /* 面板不存在（非首页/无顶栏）时静默跳过 */
+      stripParam('q');
+    }
+  }
+
+  /* 快捷键 Ctrl/Cmd + Shift + . —— 不想在地址栏留痕时的解锁入口 */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '.' && e.shiftKey && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      unlock();
+    }
+  });
 
   initHome();
   initNav();
+  boot();
 })();

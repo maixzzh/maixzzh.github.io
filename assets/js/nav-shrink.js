@@ -1,11 +1,12 @@
-/* 悬浮胶囊导航：滚动收缩 + hover/上划展开 + 移动端汉堡面板
+/* 悬浮胶囊导航：滚动收缩 + hover/上划/轻触展开 + 移动端汉堡面板
    ---------------------------------------------------------------
    展开触发（任一）：
      1. 滚动到顶部附近（≤ 40px）
      2. 上划 —— 向上滚动累计超过 8px
      3. 鼠标悬停在胶囊上（仅限支持 hover 的设备）
+     4. 轻触收缩态胶囊（仅 ≤768px；移动端灵动岛，收缩态只显示头像）
    收缩触发：
-     向下滚动累计超过 8px，且已滚过 50px，且不处于 hover 状态
+     向下滚动累计超过 8px，且已滚过 50px，且不处于 hover / 轻触展开状态
    滚动收缩在 solid 风格下无视觉作用（相关 CSS 仅在 liquid/frost 生效），
    故 JS 不判断风格，只负责切类名；无依赖、defer 加载 */
 (function () {
@@ -26,6 +27,7 @@
 
   var shrinkByScroll = false;   /* 由滚动决定的目标态（不含 hover 覆盖） */
   var hovering       = false;
+  var tappedOpen     = false;   /* 移动端轻触收缩态胶囊后的「临时展开」（仅 ≤768px 生效） */
   var lastY          = 0;
   var upAccum        = 0;       /* 向上滚动的累计位移 */
   var downAccum      = 0;       /* 向下滚动的累计位移 */
@@ -47,11 +49,17 @@
 
   function apply() {
     shrinkByScroll = computeShrink();
-    /* hover 时把内容展开，但顶边钉在收缩位（见 CSS 里 .is-hovered 的说明） */
-    header.classList.toggle('is-shrunk', shrinkByScroll && !hovering);
-    header.classList.toggle('is-hovered', shrinkByScroll && hovering);
+    /* 回顶 / 上划展开之后，临时展开已无意义，顺手清掉；
+       否则它会一直挂着，之后再下划胶囊就永远不再收缩 */
+    if (tappedOpen && !shrinkByScroll) { tappedOpen = false; }
+    /* hover 与轻触语义相同：内容展开、顶边钉在收缩位（见 CSS 里 .is-hovered 的说明）。
+       两者各用一个布尔量、只共享类名：混合设备上 (hover:hover) 成立，轻触会合成
+       mouseenter/mouseleave，共用一个变量会互相把对方抹掉 */
+    var expanded = hovering || tappedOpen;
+    header.classList.toggle('is-shrunk', shrinkByScroll && !expanded);
+    header.classList.toggle('is-hovered', shrinkByScroll && expanded);
     /* 收缩时若移动端面板开着，一并收起，避免「瘪胶囊 + 展开面板」的怪状态 */
-    if (shrinkByScroll && !hovering && header.classList.contains('nav-open')) {
+    if (shrinkByScroll && !expanded && header.classList.contains('nav-open')) {
       setMenu(false);
     }
   }
@@ -70,6 +78,9 @@
       upAccum -= delta;
       downAccum = 0;
     }
+    /* 轻触展开是「临时」的：再次下划累计到阈值就收回，
+       与 computeShrink() 第三条用同一把尺子（HIDE_DELTA） */
+    if (tappedOpen && downAccum >= HIDE_DELTA) { tappedOpen = false; }
     apply();
   }
 
@@ -91,7 +102,25 @@
     header.addEventListener('mouseleave', function () { hovering = false; apply(); });
   }
 
-  /* ---------- 4. 移动端汉堡面板 ---------- */
+  /* ---------- 4. 移动端灵动岛：轻触收缩态胶囊即展开 ----------
+     收缩态下胶囊里剩下的可点内容只有 <a class="brand" href="/">，不拦就会跳首页。
+     只在移动端断点拦截：桌面端收缩态的品牌是普通链接，点它本就该回首页 */
+  header.addEventListener('click', function (e) {
+    if (!menuMq || !menuMq.matches) { return; }               /* 仅移动端 */
+    if (!header.classList.contains('is-shrunk')) { return; }  /* 仅收缩态 */
+    /* 搜索展开时 CSS 把胶囊钉在全宽（不走灵动岛），此时轻触不该被吞掉 */
+    if (header.classList.contains('is-searching')) { return; }
+    /* 落在真实控件上的点击不拦：收缩态下它们 visibility:hidden 收不到点击，
+       这里只是形变过程中的兜底 */
+    if (e.target && e.target.closest && e.target.closest('button')) { return; }
+    e.preventDefault();
+    tappedOpen = true;
+    upAccum = 0;      /* 清掉方向累计：刚置位的临时展开不该被上一次的滚动余量立刻收回 */
+    downAccum = 0;
+    apply();
+  });
+
+  /* ---------- 5. 移动端汉堡面板 ---------- */
   function setMenu(open) {
     header.classList.toggle('nav-open', open);
     if (toggle) { toggle.setAttribute('aria-expanded', open ? 'true' : 'false'); }
@@ -124,12 +153,17 @@
 
   /* 窗口跨回桌面断点（面板被 CSS 隐藏）时自动关闭 */
   if (menuMq) {
-    var onMqChange = function () { if (!menuMq.matches) { setMenu(false); } };
+    var onMqChange = function () {
+      if (!menuMq.matches) { setMenu(false); }
+      /* 跨断点清掉临时展开态：桌面端没有灵动岛，留着它收缩态就永远展不开 */
+      if (tappedOpen) { tappedOpen = false; }
+      apply();
+    };
     if (menuMq.addEventListener) { menuMq.addEventListener('change', onMqChange); }
     else if (menuMq.addListener) { menuMq.addListener(onMqChange); }   /* 旧版 Safari */
   }
 
-  /* ---------- 5. 初始化 ----------
+  /* ---------- 6. 初始化 ----------
      首屏可能已是滚动状态（刷新保留滚动位置 / 锚点跳转），此时没有方向信息，
      按「已下划」处理，直接落到正确的收缩态，而不是先展开再收缩 */
   lastY = scrollY();

@@ -34,10 +34,22 @@
       <button type="button" class="nav-search-close" id="nav-search-close" aria-label="关闭搜索">✕</button>
     </div>
 
-    <!-- 右：主题菜单（桌面） -->
+    <!-- 右：主题菜单（桌面）。触发器只留调色盘图标，无障碍名由 aria-label 承担；
+         尺寸/颜色/hover/focus 与左侧 .nav-search-toggle 逐像素一致。
+         .theme-menu-trigger 类名与 aria-expanded 由 theme-menu.js 依赖，不可改 -->
     <div class="theme-menu" id="theme-menu">
       <button type="button" class="theme-menu-trigger" id="theme-menu-trigger"
-              aria-haspopup="menu" aria-expanded="false">主题</button>
+              aria-haspopup="menu" aria-expanded="false"
+              aria-label="主题设置" title="主题设置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"></path>
+          <circle cx="13.5" cy="6.5" r=".5"></circle>
+          <circle cx="17.5" cy="10.5" r=".5"></circle>
+          <circle cx="6.5" cy="12.5" r=".5"></circle>
+          <circle cx="8.5" cy="7.5" r=".5"></circle>
+        </svg>
+      </button>
       <div class="theme-menu-panel" role="menu" aria-labelledby="theme-menu-trigger">
         <div class="theme-menu-item" role="menuitem" tabindex="0">
           颜色模式

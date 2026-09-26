@@ -1,0 +1,11 @@
+---
+layout: null
+permalink: /robots.txt
+---
+# 2 级私密文章的搜索索引。它不可被鉴权（静态托管），但没必要被搜索引擎
+# 抓走——Disallow 只阻止抓取，不阻止展示，所以私密文章**页面**本身不能
+# 在这里 Disallow（那样爬虫看不到 noindex，反而可能被收录）；页面靠
+# _includes/head.html 里的 <meta name="robots" content="noindex..."> 处理。
+User-agent: *
+Disallow: /search-secret.json
+Allow: /

@@ -292,19 +292,28 @@ html[data-glass="solid"] .post {
   position: relative;            /* 面板定位锚点 */
 }
 
+/* 触发器：与 .nav-search-toggle 同规格的 34px 圆点（逐条对齐 search.css:92-121）
+   高度核对：触发器 23px → 34px，但胶囊内容高度由 .nav-links a 的 37.5px（静止）/
+   .nav-search-toggle 的 34px（收缩）决定，34 ≤ 37.5 且 34 ≤ 34，两个状态下都不变 */
 .theme-menu-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font: inherit;
-  font-size: 0.9375rem;          /* 与 .site-nav a 字号一致 */
-  line-height: 1;
-  color: var(--text);
-  padding: 4px 10px;
+  justify-content: center;       /* 只剩图标，改为居中；不再需要 gap */
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: 9999px;
   background: transparent;
+  color: var(--text-2);
   cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.theme-menu-trigger svg {
+  width: 18px;
+  height: 18px;
 }
 
 .theme-menu-trigger:hover,
@@ -684,13 +693,23 @@ html[data-glass="frost"]  body { padding-top: 88px; }
 @media (max-width: 768px) {
   html[data-glass="liquid"] .site-header.glass,
   html[data-glass="frost"]  .site-header.glass {
-    width: calc(100% - 24px);      /* 同 iOS Safari：宽度固定、只收缩高度 */
+    width: calc(100% - 24px);      /* 同 iOS Safari */
     max-width: 420px;
+    /* 过渡列表整条重写：上方 519-525 行只列了 top，这里补 max-width。
+       收窄必须走 max-width 而非 width——width 是视口相关值、被 max-width 钳住，
+       过渡它会在 445~768px 视口下前 ~41% 卡在 420px 不动再突缩。
+       只动 top 与 max-width，不碰 transform（与 backdrop-filter 同时动画会重采样瑕疵） */
+    transition: top var(--nav-dur) var(--nav-ease),
+                max-width var(--nav-dur) var(--nav-ease);
   }
 
   html[data-glass="liquid"] .site-header .site-nav,
   html[data-glass="frost"]  .site-header .site-nav {
     justify-content: space-between;
+    /* 压过 main.css 移动端基线的 flex-wrap:wrap：
+       灵动岛收缩态只有 44px 宽，允许换行会把四个控件叠成多行、把胶囊撑高一倍。
+       展开态下所有控件本来就能排进一行，改 nowrap 不产生任何视觉变化 */
+    flex-wrap: nowrap;
     padding: 8px 12px;
   }
 
@@ -785,6 +804,72 @@ html[data-glass="frost"]  body { padding-top: 88px; }
   html[data-glass="liquid"] .site-header.nav-open .nav-toggle-bar:nth-child(3),
   html[data-glass="frost"]  .site-header.nav-open .nav-toggle-bar:nth-child(3) {
     transform: translateY(-6px) rotate(-45deg);
+  }
+
+  /* ==========================================================
+     灵动岛：收缩态把移动端胶囊也收窄，只留头像
+     ----------------------------------------------------------
+     全部限定在「≤768px + liquid/frost」内，solid 与 ≥769px 不受影响。
+     所有收缩态规则都带 :not(.is-searching)：本块特异性最高到 (0,5,1)，不加门禁
+     会压过 search.css 的 .site-header.is-searching .nav-search (0,3,0) 把搜索框
+     压扁——靠加载顺序救不了
+     ========================================================== */
+
+  /* —— 裁剪层 ——
+     .site-nav 静态定位、只包 flex 内容，是唯一安全的裁剪层：
+     .nav-links 面板是 abspos，其包含块 .site-header 位于 .site-nav 之上，
+     按 CSS 2.1 §11.1.1「abspos 不被位于自身与其包含块之间的祖先裁剪」天然逃逸，
+     所以放这里既能裁掉收窄时溢出的控件，又不会裁掉汉堡下拉面板 */
+  html[data-glass="liquid"] .site-header .site-nav,
+  html[data-glass="frost"]  .site-header .site-nav {
+    overflow: hidden;
+    border-radius: var(--gr-radius);   /* 裁切边界跟随胶囊圆角，避免方角咬掉头像 */
+  }
+
+  html[data-glass="liquid"] .site-header.nav-open .site-nav,
+  html[data-glass="frost"]  .site-header.nav-open .site-nav { overflow: visible; }
+
+  /* —— 外壳：收缩态收窄 ——
+     44px = 内边距 12×2 + 缩小后头像 20px；内容盒正好 20px，头像恰好居中 */
+  html[data-glass="liquid"] .site-header.is-shrunk:not(.is-searching),
+  html[data-glass="frost"]  .site-header.is-shrunk:not(.is-searching) {
+    max-width: 44px;
+  }
+
+  /* —— 内容折叠：右侧两个控件收掉，只留头像 ——
+     .brand-text 已由本文件上方的全局规则折叠，无需重复。
+     只在收缩方向声明 transition：展开方向不声明、属性瞬时复位，由胶囊变宽的过程
+     把内容从圆角下刷出来，顺带避免覆盖 search.css 里 .nav-search 的 width 过渡。
+     visibility 必须延迟翻转：overflow:hidden 是可滚容器，被裁掉的控件若仍可聚焦，
+     焦点会触发容器滚动把整个胶囊内容推歪 */
+  html[data-glass="liquid"] .site-header.is-shrunk:not(.is-searching) .nav-search,
+  html[data-glass="frost"]  .site-header.is-shrunk:not(.is-searching) .nav-search,
+  html[data-glass="liquid"] .site-header.is-shrunk:not(.is-searching) .nav-toggle,
+  html[data-glass="frost"]  .site-header.is-shrunk:not(.is-searching) .nav-toggle {
+    max-width: 0;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;               /* border-box 下 max-width 会被 padding 撑住 */
+    padding-right: 0;
+    opacity: 0;
+    overflow: hidden;              /* 裁掉按钮内的图标 / 汉堡横线 */
+    visibility: hidden;
+    transition: max-width var(--nav-dur) var(--nav-ease),
+                margin var(--nav-dur) var(--nav-ease),
+                padding var(--nav-dur) var(--nav-ease),
+                opacity var(--nav-dur-fast) var(--nav-ease),
+                visibility 0s var(--nav-dur);
+  }
+
+  /* —— 搜索 + 汉堡靠右成组 ——
+     auto 外边距先于 justify-content 分配自由空间，于是品牌留在左侧、
+     搜索被推到汉堡紧邻处（此时 space-between 已无事可做）。
+     特异性写到 (0,4,1) 是为了压过 search.css 里 .nav-search 的 margin-left:8px
+     (0,3,1)——本文件先加载，同级比顺序赢不了 */
+  html[data-glass="liquid"] .site-header .site-nav .nav-search,
+  html[data-glass="frost"]  .site-header .site-nav .nav-search {
+    margin-left: auto;
+    margin-right: 4px;             /* 两个 34px 圆点之间的呼吸位 */
   }
 }
 

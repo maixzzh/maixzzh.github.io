@@ -23,9 +23,12 @@ layout: default
              placeholder="搜索文章标题或正文…" aria-label="搜索文章" autocomplete="off">
     </section>
 
-    <!-- 最新文章 / 搜索结果（内容由 Jekyll 渲染，搜索时由 search.js 接管） -->
+    <!-- 最新文章 / 搜索结果（内容由 Jekyll 渲染，搜索时由 search.js 接管）
+         只列 secret: 0。必须先 where_exp 再 limit——for 标签的 limit 是「先截断
+         再循环」，直接写 limit 的话私密文章会白占名额，首页只会显示 1~2 篇 -->
+    {% assign home_posts = site.posts | where_exp: "p", "p.secret == 0" %}
     <div class="home-feed" id="home-feed">
-      {% for post in site.posts limit: 3 %}
+      {% for post in home_posts limit: 3 %}
       <article class="card feed-item glass-card">
         <h2 class="feed-title"><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
         {% if post.d %}<p class="feed-desc">{{ post.d }}</p>{% endif %}

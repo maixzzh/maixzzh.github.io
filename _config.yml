@@ -19,3 +19,4 @@ defaults:
       type: posts
     values:
       layout: post
+      secret: 0          # 默认公开；1 = 列表隐藏但可搜到；2 = 还需 ?secret 解锁才能搜到 + 限时分享链接
