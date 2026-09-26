@@ -61,7 +61,7 @@
 
      说清楚：这仍然是"防君子"。算法和盐都在这个文件里，会读 JS 的人可以
      直接伪造作者令牌。它的作用是让口令不能从源码里直接读出来。 */
-  var PHRASE_HASH = 'f9146afc726943de';
+  var PHRASE_HASH = '4e142287059007c1';
   var AUTHOR_ID   = '*';              /* 通配 id：一枚作者令牌通吃所有二级文章 */
   var AUTHOR_DUR  = 315360000000;     /* 10 年 */
   var AUTHOR_KEY  = 'secret-author';  /* localStorage：跨设备会话长期记住 */
