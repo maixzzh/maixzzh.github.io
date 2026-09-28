@@ -8,7 +8,10 @@
    收缩触发：
      向下滚动累计超过 8px，且已滚过 50px，且不处于 hover / 轻触展开状态
    滚动收缩在 solid 风格下无视觉作用（相关 CSS 仅在 liquid/frost 生效），
-   故 JS 不判断风格，只负责切类名；无依赖、defer 加载 */
+   故 JS 不判断风格，只负责切类名。
+   音乐播放（.has-audio）同样交给 CSS：收缩规则上加了 :not(.has-audio) 门禁，
+   本脚本照旧只切 .is-shrunk，不感知播放状态（唯移动端轻触拦截处要放行）。
+   无依赖、defer 加载 */
 (function () {
   'use strict';
 
@@ -110,6 +113,11 @@
     if (!header.classList.contains('is-shrunk')) { return; }  /* 仅收缩态 */
     /* 搜索展开时 CSS 把胶囊钉在全宽（不走灵动岛），此时轻触不该被吞掉 */
     if (header.classList.contains('is-searching')) { return; }
+    /* 有音轨时胶囊同样不收缩（见 audio.css 的 :not(.has-audio) 门禁）。
+       这一条非加不可：下面放行真实控件的 closest('button') 匹配不到
+       <input type="range">，拦下去等于把进度条的原生拖动 preventDefault 掉，
+       而且只在移动端复现 */
+    if (header.classList.contains('has-audio')) { return; }
     /* 落在真实控件上的点击不拦：收缩态下它们 visibility:hidden 收不到点击，
        这里只是形变过程中的兜底 */
     if (e.target && e.target.closest && e.target.closest('button')) { return; }

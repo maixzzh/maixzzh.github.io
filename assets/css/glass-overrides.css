@@ -534,9 +534,11 @@ html[data-glass="frost"]  .site-header.glass {
   transition: top var(--nav-dur) var(--nav-ease);
 }
 
-/* 收缩态：位置贴近边缘 */
-html[data-glass="liquid"] .site-header.is-shrunk,
-html[data-glass="frost"]  .site-header.is-shrunk {
+/* 收缩态：位置贴近边缘。
+   :not(.has-audio) —— 有音轨时胶囊停在静止位，音乐区留在中间（见 audio.css）。
+   门禁必须加在规则本身：本块特异性已到 (0,5,1)，靠新文件后加载压不住 */
+html[data-glass="liquid"] .site-header.is-shrunk:not(.has-audio),
+html[data-glass="frost"]  .site-header.is-shrunk:not(.has-audio) {
   top: var(--nav-pill-top-shrunk);
 }
 
@@ -561,14 +563,14 @@ html[data-glass="frost"]  .site-header .site-nav {
   transition: padding var(--nav-dur) var(--nav-ease);
 }
 
-html[data-glass="liquid"] .site-header.is-shrunk .site-nav,
-html[data-glass="frost"]  .site-header.is-shrunk .site-nav {
+html[data-glass="liquid"] .site-header.is-shrunk:not(.has-audio) .site-nav,
+html[data-glass="frost"]  .site-header.is-shrunk:not(.has-audio) .site-nav {
   padding: var(--nav-pad-y-shrunk) var(--nav-pad-x-shrunk);
 }
 
 /* 收缩：头像缩小 */
-html[data-glass="liquid"] .site-header.is-shrunk .brand-avatar,
-html[data-glass="frost"]  .site-header.is-shrunk .brand-avatar {
+html[data-glass="liquid"] .site-header.is-shrunk:not(.has-audio) .brand-avatar,
+html[data-glass="frost"]  .site-header.is-shrunk:not(.has-audio) .brand-avatar {
   width: 20px;
   height: 20px;
 }
@@ -812,7 +814,9 @@ html[data-glass="frost"]  body { padding-top: 88px; }
      全部限定在「≤768px + liquid/frost」内，solid 与 ≥769px 不受影响。
      所有收缩态规则都带 :not(.is-searching)：本块特异性最高到 (0,5,1)，不加门禁
      会压过 search.css 的 .site-header.is-searching .nav-search (0,3,0) 把搜索框
-     压扁——靠加载顺序救不了
+     压扁——靠加载顺序救不了。
+     :not(.has-audio) 同理（见 audio.css）：有音轨时胶囊不收缩，音乐区要留在中间。
+     两个例外都只能加在规则本身，靠 audio.css 后加载压不住 (0,5,1)
      ========================================================== */
 
   /* —— 裁剪层 ——
@@ -830,9 +834,10 @@ html[data-glass="frost"]  body { padding-top: 88px; }
   html[data-glass="frost"]  .site-header.nav-open .site-nav { overflow: visible; }
 
   /* —— 外壳：收缩态收窄 ——
-     44px = 内边距 12×2 + 缩小后头像 20px；内容盒正好 20px，头像恰好居中 */
-  html[data-glass="liquid"] .site-header.is-shrunk:not(.is-searching),
-  html[data-glass="frost"]  .site-header.is-shrunk:not(.is-searching) {
+     44px = 内边距 12×2 + 缩小后头像 20px；内容盒正好 20px，头像恰好居中。
+     有音轨时也不收窄：音乐区要留在中间，且两条 :not() 门禁缺一不可 */
+  html[data-glass="liquid"] .site-header.is-shrunk:not(.is-searching):not(.has-audio),
+  html[data-glass="frost"]  .site-header.is-shrunk:not(.is-searching):not(.has-audio) {
     max-width: 44px;
   }
 
@@ -842,10 +847,12 @@ html[data-glass="frost"]  body { padding-top: 88px; }
      把内容从圆角下刷出来，顺带避免覆盖 search.css 里 .nav-search 的 width 过渡。
      visibility 必须延迟翻转：overflow:hidden 是可滚容器，被裁掉的控件若仍可聚焦，
      焦点会触发容器滚动把整个胶囊内容推歪 */
-  html[data-glass="liquid"] .site-header.is-shrunk:not(.is-searching) .nav-search,
-  html[data-glass="frost"]  .site-header.is-shrunk:not(.is-searching) .nav-search,
-  html[data-glass="liquid"] .site-header.is-shrunk:not(.is-searching) .nav-toggle,
-  html[data-glass="frost"]  .site-header.is-shrunk:not(.is-searching) .nav-toggle {
+  html[data-glass="liquid"] .site-header.is-shrunk:not(.is-searching):not(.has-audio) .nav-search,
+  html[data-glass="frost"]  .site-header.is-shrunk:not(.is-searching):not(.has-audio) .nav-search,
+  html[data-glass="liquid"] .site-header.is-shrunk:not(.is-searching):not(.has-audio) .nav-music-picker,
+  html[data-glass="frost"]  .site-header.is-shrunk:not(.is-searching):not(.has-audio) .nav-music-picker,
+  html[data-glass="liquid"] .site-header.is-shrunk:not(.is-searching):not(.has-audio) .nav-toggle,
+  html[data-glass="frost"]  .site-header.is-shrunk:not(.is-searching):not(.has-audio) .nav-toggle {
     max-width: 0;
     margin-left: 0;
     margin-right: 0;
@@ -883,7 +890,8 @@ html[data-glass="frost"]  body { padding-top: 88px; }
   .brand-text,
   html[data-glass="liquid"] .nav-links a,
   html[data-glass="frost"]  .nav-links a,
-  .nav-toggle-bar {
+  .nav-toggle-bar,
+  .nav-music-picker {
     transition: none !important;
   }
 }

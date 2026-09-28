@@ -53,14 +53,32 @@
 <link rel="stylesheet" href="{{ "/assets/css/post.css" | relative_url }}">
 <!-- 搜索样式排在最后：与 glass-overrides/post 特异性相同时靠顺序取胜 -->
 <link rel="stylesheet" href="{{ "/assets/css/search.css" | relative_url }}">
+<!-- 自定义音频播放器的开关：JS 可用才隐藏原生 <audio controls>（同 data-secret 的思路）。
+     内联脚本在解析期就执行，早于首帧，所以原生控件一帧都不会闪 -->
+<script>document.documentElement.dataset.audio = 'on';</script>
+<!-- 音频样式排在 search.css 之后：顶栏音乐区要与搜索框在特异性相同时靠顺序仲裁
+     （.is-searching 压过 .has-audio，见 audio.css 第 4 节） -->
+<link rel="stylesheet" href="{{ "/assets/css/audio.css" | relative_url }}">
+<!-- 背景音乐：选歌图标 + 下拉面板。排在 audio.css 之后（同族 UI 相邻；面板与
+     音乐区有若干同特异性的规则要靠它压过），secret.css 仍必须最后 -->
+<link rel="stylesheet" href="{{ "/assets/css/music.css" | relative_url }}">
 <!-- 私密文章样式压在最后：分享弹窗要盖过 search.css 里 .nav-search-layer 的 z-index 200 -->
 <link rel="stylesheet" href="{{ "/assets/css/secret.css" | relative_url }}">
 <script src="{{ "/assets/js/glass-style.js" | relative_url }}" defer></script>
 <script src="{{ "/assets/js/glass-theme.js" | relative_url }}" defer></script>
 <script src="{{ "/assets/js/theme-menu.js" | relative_url }}" defer></script>
 <script src="{{ "/assets/js/nav-shrink.js" | relative_url }}" defer></script>
+<!-- 文章 <audio> → 自定义播放器 + 顶栏音乐区。与 nav-shrink.js 没有调用依赖
+     （只共用 #site-header 上的类名），排在它后面纯粹为了可读性 -->
+<script src="{{ "/assets/js/audio-player.js" | relative_url }}" defer></script>
+<!-- 背景音乐选歌：拉 /music.json、渲染面板、驱动播放列表。
+     与 audio-player.js 没有调用依赖（只共用 #nav-music-audio 上的
+     data-playlist 约定），相邻纯为可读性 -->
+<script src="{{ "/assets/js/music-menu.js" | relative_url }}" defer></script>
 <!-- 搜索索引地址：走 relative_url 以兼容 baseurl；含前导斜杠，故用单引号包住 -->
 <script>window.SEARCH_INDEX = "{{ '/search.json' | relative_url }}";</script>
 <script>window.SEARCH_SECRET_INDEX = "{{ '/search-secret.json' | relative_url }}";</script>
+<!-- 背景音乐清单地址：同 SEARCH_INDEX，走 relative_url 以兼容 baseurl -->
+<script>window.MUSIC_INDEX = "{{ '/music.json' | relative_url }}";</script>
 <script src="{{ "/assets/js/search.js" | relative_url }}" defer></script>
 <script src="{{ "/assets/js/secret.js" | relative_url }}" defer></script>

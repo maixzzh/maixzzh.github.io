@@ -1,0 +1,200 @@
+/* ==========================================================
+   背景音乐：顶栏选歌图标 + 下拉曲目面板
+   ----------------------------------------------------------
+   图标常驻在 .nav-search 左边（视觉顺序 ♪ 🔍 🎨），点击弹出曲目列表；
+   选中后由顶栏音乐区（audio.css 的 .nav-music）显示播放状态。
+   面板刻意放在 <header> 之外（见 header.html 的注释）：移动端 .site-nav 是
+   overflow:hidden 的裁剪层，挂在胶囊内部的下拉面板会被整个裁掉。
+   ========================================================== */
+
+/* ---------- 1. 选歌图标 ---------- */
+.nav-music-picker {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  max-width: 34px;   /* 折叠要过渡就得有可比的起点（同 .nav-music / .brand-text） */
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  overflow: hidden;  /* 折叠过程中把图标本身裁掉 */
+  transition: max-width var(--nav-dur, 0.5s) var(--nav-ease, ease),
+              opacity var(--nav-dur-fast, 0.35s) var(--nav-ease, ease),
+              visibility 0s 0s;
+}
+
+.nav-music-picker svg { width: 18px; height: 18px; }
+
+.nav-music-picker:hover,
+.nav-music-picker[aria-expanded="true"] {
+  background: var(--hover-bg);
+  color: var(--blue);
+}
+
+/* 负 offset：自己就是裁切容器（overflow: hidden），正 offset 的外圈会被裁掉 */
+.nav-music-picker:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+/* 胶囊内相邻控件靠自身 margin 撑间距（.site-nav 的 gap 是 0） */
+html[data-glass="liquid"] .site-header .nav-music-picker,
+html[data-glass="frost"]  .site-header .nav-music-picker { margin-left: 8px; }
+
+/* ---------- 2. 搜索展开时让位 ----------
+   特异性写到 (0,5,1)：移动端要压过下面那条 margin-left:auto ——
+   否则图标宽度虽然归零，auto 外边距照样吃掉空隙，把搜索框挤歪 */
+html[data-glass] .site-header.is-searching .site-nav .nav-music-picker {
+  max-width: 0;
+  margin-left: 0;
+  margin-right: 0;
+  opacity: 0;
+  visibility: hidden;   /* 移出 Tab 焦点序列 */
+  transition: max-width var(--nav-dur, 0.5s) var(--nav-ease, ease),
+              opacity var(--nav-dur-fast, 0.35s) var(--nav-ease, ease),
+              visibility 0s var(--nav-dur, 0.5s);
+}
+
+/* ---------- 3. 曲目面板 ---------- */
+.nav-music-layer {
+  position: fixed;
+  left: 50%;
+  top: var(--nav-music-top, 88px);   /* music-menu.js 实测胶囊底边后写入 */
+  z-index: 200;                      /* 同 .nav-search-layer：要高于 .site-header 的 100 */
+  width: min(560px, calc(100vw - 32px));
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(-8px);
+  transition: opacity 0.22s ease,
+              transform 0.28s cubic-bezier(0.25, 1, 0.5, 1),
+              visibility 0s 0.28s;
+}
+
+.nav-music-layer.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+  transition: opacity 0.22s ease,
+              transform 0.28s cubic-bezier(0.25, 1, 0.5, 1),
+              visibility 0s 0s;
+}
+
+.nav-music-panel {
+  overflow-y: auto;
+  max-height: min(60vh, 460px);
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--frost-card-bg);  /* 与 .nav-search-panel 同款：实底偏透，不用 .glass */
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.35);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .nav-music-panel { background: var(--glass-fallback-bg); }
+}
+
+.nav-music-status {
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+  color: var(--text-3);
+}
+
+.nav-music-status:empty { display: none; }
+
+.nav-music-group {
+  margin: 0;
+  padding: 10px 12px 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.nav-music-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.9375rem;
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 0.18s;
+}
+
+.nav-music-item:hover { background: var(--hover-bg); }
+
+.nav-music-item:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.nav-music-item-title {
+  min-width: 0;      /* 省略号的前提 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-music-item.is-current { color: var(--blue); font-weight: 600; }
+
+/* 只在正在播放的那一行前面挂个音符，比给每行都加图标省地方 */
+.nav-music-item.is-current .nav-music-item-title::before { content: "♪ "; }
+
+.nav-music-hint {
+  margin: 0;
+  padding: 8px 12px 4px;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--text-3);
+}
+
+/* ---------- 4. 移动端 ---------- */
+@media (max-width: 768px) {
+  /* ♪🔍☰ 成组靠右。auto 外边距先于 justify-content 分配自由空间，这份差事原本
+     挂在 .nav-search 上（glass-overrides.css 的移动端块）。现在最左的是选歌图标，
+     改由它接手；同时把 .nav-search 的 auto 归零 —— 两个 auto 会平分空隙，
+     图标会被推到胶囊正中。
+     特异性抬到 (0,5,1)，不赌「同特异性靠加载顺序」那条脆弱约定 */
+  html[data-glass="liquid"] .site-header .site-nav .nav-music-picker,
+  html[data-glass="frost"]  .site-header .site-nav .nav-music-picker {
+    margin-left: auto;
+    margin-right: 4px;
+  }
+
+  html[data-glass="liquid"] .site-header .site-nav .nav-music-picker + .nav-search,
+  html[data-glass="frost"]  .site-header .site-nav .nav-music-picker + .nav-search {
+    margin-left: 0;
+  }
+
+  .nav-music-layer { width: calc(100vw - 24px); }
+  .nav-music-panel { max-height: 62vh; }
+
+  /* 播放态下胶囊内容盒只有约 396px，算下来歌名只剩 6 个汉字。装饰性的 ♪ 让位给
+     真正有信息量的歌名 —— ▶ 和 ✕ 已经足够说明"这是音乐区" */
+  .nav-music-note { display: none; }
+  .nav-music .audio-progress { width: 56px; }
+}
+
+/* ---------- 5. 无障碍：尊重系统「减少动态效果」 ----------
+   audio.css 里也有一块，但那边列举的是 .nav-music / .audio-toggle；
+   本文件新增的元素不在其中，得自己登记 */
+@media (prefers-reduced-motion: reduce) {
+  .nav-music-picker,
+  .nav-music-layer,
+  .nav-music-item {
+    transition: none !important;
+  }
+}

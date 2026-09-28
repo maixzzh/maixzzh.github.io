@@ -1,0 +1,47 @@
+---
+layout: null
+permalink: /music.json
+---
+{% comment %}
+  背景音乐清单。与 search.json 同一套范式：构建期生成、公开可下载。
+
+  数据源只能是 site.static_files —— GitHub Pages 只跑白名单插件，且这里是
+  Jekyll 3.9，加不了自定义 Ruby 插件。三道过滤缺一不可：
+
+  1) 路径前缀：f.path 形如 "/music/xxx.mp3"（带前导斜杠）；子目录是
+     "/music/2026年4月4日/xxx.mp3"，同样命中 contains '/music/' —— 所以
+     「拖进 music/ 的任何层级都自动上线」。
+  2) 扩展名白名单：music/ 里还躺着 4 张封面（AlbumArt_*.jpg ×3、Folder.jpg），
+     不滤会被当成曲目列进菜单。extname 带点，现有素材都是小写。
+     要收新格式，往下面那串里加即可。
+  3) group：去掉 "/music/" 前缀后按 "/" 切，深度 >1 说明在子目录里，取第一段
+     当组名（再深的层级也归到顶层组）；根目录的歌是空串。
+
+  title 用 f.basename（File.basename(name, extname)）：只削掉真正的扩展名，
+  「某某 - Live 版.ver2.mp3」不会被贪婪正则削掉后半截 —— 与 audio-player.js
+  里 AUDIO_EXT 白名单同源思路。
+
+  src 走 relative_url：兼容 baseurl，并顺手把空格与中日文百分号编码成合法 URL。
+
+  ★ 清单是**构建期扫盘**的结果，不是运行时。music/ 若不在仓库里（或被
+    _config.yml 排除），这里会输出 []，线上就点不了歌 —— 加歌必须提交进仓库。
+{% endcomment %}
+{%- assign in_music = site.static_files | where_exp: "f", "f.path contains '/music/'" -%}
+{%- assign exts = '.mp3,.m4a,.m4b,.aac,.ogg,.oga,.opus,.wav,.flac,.weba,.mp4' | split: ',' -%}
+{%- assign first = true -%}
+[
+{%- for f in in_music -%}
+  {%- if exts contains f.extname -%}
+    {%- unless first -%},{%- endunless -%}
+    {%- assign first = false -%}
+    {%- assign rest = f.path | remove_first: "/music/" -%}
+    {%- assign segs = rest | split: "/" -%}
+    {%- if segs.size > 1 -%}{%- assign group = segs[0] -%}{%- else -%}{%- assign group = "" -%}{%- endif -%}
+  {
+    "title": {{ f.basename | jsonify }},
+    "src": {{ f.path | relative_url | jsonify }},
+    "group": {{ group | jsonify }}
+  }
+  {%- endif -%}
+{%- endfor -%}
+]

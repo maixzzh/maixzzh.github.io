@@ -1,0 +1,380 @@
+/* ==========================================================
+   音频播放器（文章内）+ 灵动岛音乐区（顶栏）
+   ----------------------------------------------------------
+   两处 UI 共用一套基类：
+     .audio-toggle   播放/暂停按钮（只有尺寸与配色随上下文不同）
+     .audio-progress 进度条（input[type=range]，带 --ap-fill 填充变量）
+   顶栏的状态类名由 audio-player.js 切，本文件只管视觉：
+     .has-track   本页存在激活音轨（播放中或暂停中，不论来自文章还是背景音乐）
+                  → 显示音乐区、品牌文字与桌面链接让位
+     .has-audio   音轨来自**文章里的** <audio> → 额外禁用胶囊收缩。
+                  与 .has-track 拆开是因为背景音乐是循环的，一直不收缩会把正文
+                  永久压在胶囊下面；判定见 audio-player.js 的 isPlaylistTrack()，
+                  glass-overrides.css 那几处 :not(.has-audio) 门禁靠它天然区分
+     .is-playing  正在播放 → 只负责切换 ▶/⏸ 图标
+   ========================================================== */
+
+/* ---------- 0. 原生控件门禁 ----------
+   只有 JS 可用（data-audio="on"，由 head.html 的内联脚本在解析期写入）才隐藏原生
+   控件。内联脚本早于首帧，所以原生控件一帧都不会闪；关 JS 时属性不存在，
+   <audio controls> 原样可用 —— 降级路径零成本。
+   两个属性把原生控件还给作者：data-keep-native 主动要求、data-audio-failed 建壳失败 */
+html[data-audio="on"] main audio:not([data-keep-native]):not([data-audio-failed]) {
+  display: none;
+}
+
+html[data-audio="on"] audio[data-audio-failed] {
+  display: inline;
+}
+
+/* ---------- 1. 共用基类 ---------- */
+
+.audio-toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* 图标切换：两处 UI 共用一条规则 —— .is-playing 在岛上挂 #site-header、
+   在文章里挂 .audio-player 根，后代选择器正好同时命中 */
+.audio-toggle .ico-pause { display: none; }
+.is-playing .audio-toggle .ico-play { display: none; }
+.is-playing .audio-toggle .ico-pause { display: block; }
+
+/* 进度条：WebKit 没有「已播放部分」的伪元素，跨浏览器唯一稳的做法是在 input
+   自己的背景上画一段渐变，JS 只更新 --ap-fill。
+   高度给 16px 而视觉轨道只有 4px：拇指好抓，且让轨道铺满整个 input，
+   绕开 -webkit-slider-thumb 需要 margin-top 补偿对齐的老问题 */
+.audio-progress {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  /* 轨道色用 --post-date-color 而非 --post-border：后者在半透明的文章卡片上
+     与底色只差 9 级灰度，实测像素采样为 243 vs 252，进度条等于看不见 */
+  background:
+    linear-gradient(to right,
+      var(--blue) 0 var(--ap-fill, 0%),
+      var(--post-date-color, var(--border)) var(--ap-fill, 0%) 100%)
+    center / 100% 4px no-repeat;
+  cursor: pointer;
+}
+
+.audio-progress::-webkit-slider-runnable-track {
+  height: 16px;
+  background: transparent;
+  border-radius: 9999px;
+}
+
+.audio-progress::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--blue);
+  box-shadow: 0 0 0 2px var(--card);
+}
+
+.audio-progress::-moz-range-track {
+  height: 16px;
+  background: transparent;
+}
+
+.audio-progress::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--blue);
+  box-shadow: 0 0 0 2px var(--card);
+}
+
+.audio-progress:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;      /* 胶囊与播放器外壳都是裁切容器，正 offset 的外圈会被裁掉 */
+}
+
+.audio-progress:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ---------- 2. 文章内播放器 ----------
+   不挂 .glass：正文里再套一层 backdrop-filter 既费性能又浑浊（同 glass-overrides.css
+   里汉堡面板的取舍），直接用站点令牌，三风格三主题通吃 */
+.audio-player {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 1.2em 0;
+  padding: 12px 16px;
+  border: 1px solid var(--post-border);
+  border-radius: 12px;
+  background: var(--control-bg);
+}
+
+.audio-player audio { display: none; }   /* 被搬进来的 <audio> 本体 */
+
+.audio-player .audio-toggle {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--blue);
+  color: var(--blue);
+}
+
+.audio-player .audio-toggle:hover { background: var(--hover-bg); }
+
+.audio-player .audio-toggle:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.audio-player .audio-toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.audio-player-main {
+  flex: 1 1 auto;
+  min-width: 0;              /* 标题肯出省略号的前提 */
+}
+
+.audio-player-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--body-text);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.audio-player-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.audio-player .audio-progress {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+
+.audio-player-time {
+  flex: none;
+  font-size: 0.8125rem;
+  color: var(--post-meta);
+  font-variant-numeric: tabular-nums;   /* 等宽数字：秒数跳动时整行不晃 */
+  white-space: nowrap;
+}
+
+.audio-player.is-error .audio-progress {
+  opacity: 0.45;
+}
+
+/* ---------- 3. 顶栏音乐区 ---------- */
+.nav-music {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 0;              /* 收起 = 与 .brand-text 完全同款的 max-width 折叠 */
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  white-space: nowrap;       /* 展开过程中不许换行 */
+  transition: max-width var(--nav-dur, 0.5s) var(--nav-ease, ease),
+              opacity var(--nav-dur-fast, 0.35s) var(--nav-ease, ease),
+              visibility 0s var(--nav-dur, 0.5s);
+}
+
+/* 展开态。必须用 max-width 过渡而不是 display 切换：
+   .site-header.glass 只过渡 top，宽度靠内部元素带动，display 会硬跳 */
+html[data-glass] .site-header.has-track .nav-music {
+  max-width: min(22rem, 40vw);
+  opacity: 1;
+  visibility: visible;
+  transition: max-width var(--nav-dur, 0.5s) var(--nav-ease, ease),
+              opacity var(--nav-dur-fast, 0.35s) var(--nav-ease, ease),
+              visibility 0s 0s;
+}
+
+/* 桌面收缩态：把音乐区一并折起来 —— 但**只针对背景音乐**。
+   :not(.has-audio) 让文章里的音轨豁免（「播放时不收缩」是上一轮定下的行为）。
+   背景音乐是循环的，没有这一条的话滚动后胶囊照样被 22rem 宽的音乐区撑着，
+   等于根本没收缩 */
+@media (min-width: 769px) {
+  html[data-glass] .site-header.is-shrunk:not(.is-searching):not(.has-audio) .nav-music {
+    max-width: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: max-width var(--nav-dur, 0.5s) var(--nav-ease, ease),
+                opacity var(--nav-dur-fast, 0.35s) var(--nav-ease, ease),
+                visibility 0s var(--nav-dur, 0.5s);
+  }
+}
+
+.nav-music-note {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--text-2);
+}
+
+.nav-music-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  color: var(--text);
+}
+
+.nav-music .audio-toggle {
+  width: 24px;
+  height: 24px;
+  color: var(--text-2);
+}
+
+.nav-music .audio-toggle:hover {
+  background: var(--hover-bg);
+  color: var(--blue);
+}
+
+/* 负 offset：本区与胶囊都是 overflow:hidden 的裁切容器 */
+.nav-music .audio-toggle:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.nav-music .audio-toggle svg {
+  width: 14px;
+  height: 14px;
+}
+
+.nav-music .audio-progress {
+  flex: none;
+  width: 84px;
+}
+
+/* ✕ 停止。几何同 ▶/⏸，但更小一点 —— 叉号的视觉重量本来就比三角大 */
+.nav-music .nav-music-stop {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.nav-music .nav-music-stop:hover {
+  background: var(--hover-bg);
+  color: var(--blue);
+}
+
+.nav-music .nav-music-stop:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.nav-music .nav-music-stop svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ---------- 4. 状态仲裁 ----------
+   下面两条规则特异性相同（都是 (0,4,1)），「搜索优先于音乐」只能靠本文件内的
+   先后顺序仲裁 —— 重排本文件会静默破坏它，改动时务必保持 .is-searching 在后 */
+
+/* 有音轨时品牌文字折叠：给音乐区让位。
+   刻意不去 glass-overrides.css 的 .is-shrunk .brand-text 里加门禁，改由这里接管 ——
+   播放折叠与滚动折叠共用同一段过渡语法，两种状态的观感才一致 */
+html[data-glass] .site-header.has-track .brand-text {
+  max-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: max-width var(--nav-dur, 0.5s) var(--nav-ease, ease),
+              opacity var(--nav-dur-fast, 0.35s) var(--nav-ease, ease),
+              visibility 0s var(--nav-dur, 0.5s);
+}
+
+/* 桌面端链接让位。只折 .nav-links a 这一级 —— 容器宽度自然归零，
+   这样同时覆盖 solid（那里 .nav-links 是 display: contents，折容器无效） */
+@media (min-width: 769px) {
+  html[data-glass] .site-header.has-track .nav-links a {
+    max-width: 0;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: 0;
+    margin-right: 0;
+    opacity: 0;
+    overflow: hidden;
+    visibility: hidden;
+    transition: max-width var(--nav-dur, 0.5s) var(--nav-ease, ease),
+                opacity var(--nav-dur-fast, 0.35s) var(--nav-ease, ease),
+                padding var(--nav-dur, 0.5s) var(--nav-ease, ease),
+                margin var(--nav-dur, 0.5s) var(--nav-ease, ease),
+                visibility 0s var(--nav-dur, 0.5s);
+  }
+}
+
+/* 搜索展开时让音乐区收起：全宽搜索框会盖住中间区域。
+   必须写在上面 .has-track 那条之后 —— 见本节开头的说明 */
+html[data-glass] .site-header.is-searching .nav-music {
+  max-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: max-width var(--nav-dur, 0.5s) var(--nav-ease, ease),
+              opacity var(--nav-dur-fast, 0.35s) var(--nav-ease, ease),
+              visibility 0s var(--nav-dur, 0.5s);
+}
+
+@media (max-width: 768px) {
+  /* 桌面有 .brand 的 margin-right 与 .nav-search 的 margin-left 撑开间距；
+     移动端两者都归零，音乐区得自己让出左边的呼吸位 */
+  html[data-glass] .site-header.has-track .nav-music {
+    margin-left: 8px;
+    max-width: 30rem;        /* 大于胶囊自身的 420px 上限，实际由 flex 压缩决定 */
+  }
+
+  .nav-music .audio-progress { width: 64px; }
+
+  /* solid 模式的主 bar 是 flex-wrap: wrap（main.css 的移动端基线），
+     不锁住的话音乐区会把 bar 挤成两行 */
+  html[data-glass="solid"] .site-header.has-track .site-nav { flex-wrap: nowrap; }
+}
+
+/* ---------- 5. 无障碍：尊重系统「减少动态效果」 ----------
+   glass-overrides.css 里那块带 !important 但选择器列表不含新元素，故这里必须重来一份 */
+@media (prefers-reduced-motion: reduce) {
+  .nav-music,
+  .audio-toggle,
+  html[data-glass] .site-header.has-track .brand-text,
+  html[data-glass] .site-header.has-track .nav-links a {
+    transition: none !important;
+  }
+}
